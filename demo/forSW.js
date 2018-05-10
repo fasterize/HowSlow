@@ -33,9 +33,9 @@ self.addEventListener('fetch', (event) => {
             request = 'image-XL.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 300) {
             request = 'image-L.jpg?timestamp=' + result[1];
-        } else if (estimator.bandwidth < 30) {
+        } else if (estimator.bandwidth < 100) {
             request = 'image-S.jpg?timestamp=' + result[1];
-        } else if (estimator.bandwidth < 10) {
+        } else if (estimator.bandwidth < 30) {
             request = 'image-XS.jpg?timestamp=' + result[1];
         } 
     }

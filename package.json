@@ -1,0 +1,32 @@
+{
+  "name": "howslow",
+  "version": "0.0.1",
+  "description": "Advanced speed estimation snippet",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gmetais/howslow.git"
+  },
+  "keywords": [
+    "webperf",
+    "performance",
+    "speed",
+    "slowness",
+    "detection"
+  ],
+  "author": "Gaël Métais",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gmetais/howslow/issues"
+  },
+  "homepage": "https://github.com/gmetais/howslow#readme",
+  "devDependencies": {
+    "mocha": "5.1.0"
+  }
+}

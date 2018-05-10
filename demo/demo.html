@@ -1,0 +1,67 @@
+<html>
+<head>
+    <title>HowSlow demo page</title>
+    <style>
+        img {
+            margin: 10px;
+            width: 300px;
+            background-color: #999;
+            animation: 1s ease-out 0s 1 appear;
+        }
+        @keyframes appear {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <p>This page reloads indefinitely the same image. But a Service Worker intercepts the requests and chooses what images it wants, based on a bandwidth estimation.</p>
+
+    <button id="stopButton">Stop</button>
+    <button id="restartButton" disabled="true">Restart</button>
+
+    <div id="imageContainer"></div>
+
+    <script>
+        const container = document.getElementById('imageContainer');
+
+        const DELAY = 2000;
+        let timer = null;
+
+        function loadNewImage() {
+            var image = document.createElement('img');
+            image.src = 'image.jpg?timestamp=' + Date.now();
+            image.onload = function() {
+                timer = setTimeout(loadNewImage, DELAY);
+            };
+            container.insertBefore(image, container.firstChild);
+        }
+
+        loadNewImage();
+
+        // Stop and restart buttons
+        const stopButton = document.getElementById('stopButton');
+        const restartButton = document.getElementById('restartButton');
+        stopButton.onclick = function() {
+            clearTimeout(timer);
+            stopButton.disabled = true;
+            restartButton.disabled = false;
+        };
+        restartButton.onclick = function() {
+            clearTimeout(timer);
+            loadNewImage();
+            stopButton.disabled = false;
+            restartButton.disabled = true;
+        };
+    </script>
+
+    <script src="forPage.js"></script>
+    <script>
+        var howslow = new HowSlowForPage('forSW.js');
+    </script>
+</body>
+</html>

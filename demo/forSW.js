@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Add credentials to the request, otherwise fetch opens a new connection
-    let options = (modifiedUrl && event.request.mode !== navigation) ? {credentials: 'include'} : null;
+    let options = (modifiedUrl) ? {credentials: 'include'} : null;
 
     event.respondWith(
         fetch(modifiedUrl ? modifiedUrl : event.request.url, options)

@@ -19,7 +19,7 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let request = event.request;
+    let modifiedUrl = null;
 
     // Intercept the image calls...
     const regexp = /image\.jpg\?timestamp=(.*)$/;
@@ -30,22 +30,25 @@ self.addEventListener('fetch', (event) => {
         // ... and choose the right image!
 
         if (estimator.bandwidth > 3000) {
-            request = 'image-XXL.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XXL.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 1000) {
-            request = 'image-XL.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XL.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 300) {
-            request = 'image-L.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-L.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 100) {
-            request = 'image-M.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-M.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 30) {
-            request = 'image-S.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-S.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 10) {
-            request = 'image-XS.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XS.jpg?timestamp=' + result[1];
         }
     }
 
+    // Add credentials to the request, otherwise fetch opens a new connection
+    let options = (modifiedUrl && event.request.mode !== navigation) ? {credentials: 'include'} : null;
+
     event.respondWith(
-        fetch(request, {credentials: 'include'})
+        fetch(modifiedUrl ? modifiedUrl : event.request.url, options)
             .then(function(response) {
                 estimator.addContentLength(event.request.url, response);
                 return response;

@@ -39,9 +39,9 @@ self.addEventListener('fetch', (event) => {
             request = 'image-M.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 30) {
             request = 'image-S.jpg?timestamp=' + result[1];
-        } else {
+        } else if (estimator.bandwidth > 10) {
             request = 'image-XS.jpg?timestamp=' + result[1];
-        } 
+        }
     }
 
     event.respondWith(
@@ -189,7 +189,7 @@ class SpeedEstimator {
             }
         });
 
-        // Don't answer if we don't have enough data (less than 100kB)
+        // Don't answer if we don't have enough data (less than 100KB)
         if (totalTransferedSize < 102400) {
             return null;
         }

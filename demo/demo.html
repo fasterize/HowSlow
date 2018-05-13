@@ -56,6 +56,18 @@
             stopButton.disabled = false;
             restartButton.disabled = true;
         };
+
+        // Autostop parameter
+        // Default is 300 seconds to avoid crashing the internets
+        let autostop = 300;
+        if (window.location.search.indexOf('?autostop=') === 0) {
+            autostop = parseInt(window.location.search.substr(10), 10);
+        }
+        setTimeout(() => {
+            stopped = true;
+            stopButton.disabled = true;
+            restartButton.disabled = false;
+        }, autostop * 1000);
     </script>
 
     <script src="forPage.js"></script>

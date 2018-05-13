@@ -26,15 +26,19 @@
         const container = document.getElementById('imageContainer');
 
         const DELAY = 1000;
-        let timer = null;
+        let stopped = false;
 
         function loadNewImage() {
-            var image = document.createElement('img');
-            image.src = 'image.jpg?timestamp=' + Date.now();
-            image.onload = function() {
-                timer = setTimeout(loadNewImage, DELAY);
-            };
-            container.insertBefore(image, container.firstChild);
+            if (!stopped) {
+                var image = document.createElement('img');
+                image.src = 'image.jpg?timestamp=' + Date.now();
+                image.onload = function() {
+                    setTimeout(loadNewImage, DELAY);
+                };
+                container.insertBefore(image, container.firstChild);
+            } else {
+                setTimeout(loadNewImage, DELAY);
+            }
         }
 
         loadNewImage();
@@ -43,13 +47,12 @@
         const stopButton = document.getElementById('stopButton');
         const restartButton = document.getElementById('restartButton');
         stopButton.onclick = function() {
-            clearTimeout(timer);
+            stopped = true;
             stopButton.disabled = true;
             restartButton.disabled = false;
         };
         restartButton.onclick = function() {
-            clearTimeout(timer);
-            loadNewImage();
+            stopped = false;
             stopButton.disabled = false;
             restartButton.disabled = true;
         };

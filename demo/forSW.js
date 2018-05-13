@@ -168,13 +168,14 @@ class SpeedEstimator {
 
     // Reads all given timings and estimate bandwidth
     _estimateBandwidth() {
+        
         // As several resources can load simulteaneously, there's no simple way to estimate bandwidth.
 
         let intervals = [];
         let totalTransferedSize = 0;
-        const INTERVAL_DURATION = 100;
+        const INTERVAL_DURATION = 25;
 
-        // Let's separate page load in 10ms time intervals and estimate the number of bytes loaded in each
+        // Let's separate page load into small time intervals and estimate the number of bytes loaded in each one
         this.allTimings.forEach(timing => {
 
             let estimatedTransferSize = timing.transferSize;

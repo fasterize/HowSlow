@@ -24,18 +24,22 @@ self.addEventListener('fetch', (event) => {
     // Intercept the image calls...
     const regexp = /image\.jpg\?timestamp=(.*)$/;
     const result = regexp.exec(event.request.url);
-        
-    // ... and choose the right image
+
     if (result !== null) {
+
+        // ... and choose the right image!
+
         if (estimator.bandwidth > 3000) {
             request = 'image-XXL.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 1000) {
             request = 'image-XL.jpg?timestamp=' + result[1];
         } else if (estimator.bandwidth > 300) {
             request = 'image-L.jpg?timestamp=' + result[1];
-        } else if (estimator.bandwidth < 100) {
+        } else if (estimator.bandwidth > 100) {
+            request = 'image-M.jpg?timestamp=' + result[1];
+        } else if (estimator.bandwidth > 30) {
             request = 'image-S.jpg?timestamp=' + result[1];
-        } else if (estimator.bandwidth < 30) {
+        } else {
             request = 'image-XS.jpg?timestamp=' + result[1];
         } 
     }

@@ -23,24 +23,26 @@ self.addEventListener('fetch', (event) => {
 
     // Intercept the image calls...
     const regexp = /image\.jpg\?timestamp=(.*)$/;
-    const result = regexp.exec(event.request.url);
+    const execResult = regexp.exec(event.request.url);
 
-    if (result !== null) {
+    if (execResult !== null) {
 
         // ... and choose the right image!
 
         if (estimator.bandwidth > 3000) {
-            modifiedUrl = 'image-XXL.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XXL.jpg?timestamp=' + execResult[1];
         } else if (estimator.bandwidth > 1000) {
-            modifiedUrl = 'image-XL.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XL.jpg?timestamp=' + execResult[1];
         } else if (estimator.bandwidth > 300) {
-            modifiedUrl = 'image-L.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-L.jpg?timestamp=' + execResult[1];
         } else if (estimator.bandwidth > 100) {
-            modifiedUrl = 'image-M.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-M.jpg?timestamp=' + execResult[1];
         } else if (estimator.bandwidth > 30) {
-            modifiedUrl = 'image-S.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-S.jpg?timestamp=' + execResult[1];
         } else if (estimator.bandwidth > 10) {
-            modifiedUrl = 'image-XS.jpg?timestamp=' + result[1];
+            modifiedUrl = 'image-XS.jpg?timestamp=' + execResult[1];
+        } else {
+            modifiedUrl = 'image-unknown.jpg?timestamp=' + execResult[1];
         }
     }
 
@@ -168,7 +170,7 @@ class SpeedEstimator {
 
     // Reads all given timings and estimate bandwidth
     _estimateBandwidth() {
-        
+
         // As several resources can load simulteaneously, there's no simple way to estimate bandwidth.
 
         let intervals = [];

@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        fetch(request)
+        fetch(request, {credentials: 'include'})
             .then(function(response) {
                 estimator.addContentLength(event.request.url, response);
                 return response;

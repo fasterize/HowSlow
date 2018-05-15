@@ -20,6 +20,7 @@ self.addEventListener('activate', () => {
 self.addEventListener('fetch', (event) => {
     
     let modifiedUrl = null;
+    let options = null;
 
     // Intercept the image calls...
     const regexp = /image\.jpg\?timestamp=(.*)$/;
@@ -48,10 +49,10 @@ self.addEventListener('fetch', (event) => {
 
     if (modifiedUrl) {
         // Saves the new url for later use
-        this.addUrlRewriting(event.request.url, modifiedUrl);
+        estimator.addUrlRewriting(event.request.url, modifiedUrl);
 
         // Add credentials to the request, otherwise fetch opens a new connection
-        let options = (modifiedUrl) ? {credentials: 'include'} : null;
+        options = {credentials: 'include'};
     }
 
     event.respondWith(

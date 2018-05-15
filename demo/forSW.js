@@ -20,7 +20,7 @@ self.addEventListener('activate', () => {
 self.addEventListener('fetch', (event) => {
     
     let modifiedUrl = null;
-    let options = null;
+    let options = {};
 
     // Intercept the image calls...
     const regexp = /image\.jpg\?timestamp=(.*)$/;
@@ -52,11 +52,11 @@ self.addEventListener('fetch', (event) => {
         estimator.addUrlRewriting(event.request.url, modifiedUrl);
 
         // Add credentials to the request, otherwise fetch opens a new connection
-        options = {credentials: 'include'};
+        options.credentials = 'include';
     }
 
     event.respondWith(
-        fetch(modifiedUrl ? modifiedUrl : event.request.url, options)
+        fetch((modifiedUrl || event.request), options)
             .then(function(response) {
                 estimator.addContentLength(event.request.url, response);
                 return response;
@@ -77,7 +77,7 @@ class SpeedEstimator {
 
         setInterval(() => {
             this._refreshStats();
-            console.log('Estimated bandwidth: ' + this.bandwidth);
+            console.log('Estimated bandwidth: %dKB/s', this.bandwidth);
         }, 1000);
 
 

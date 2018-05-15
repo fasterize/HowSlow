@@ -71,8 +71,12 @@ class SpeedEstimator {
         this.allTimings = [];
         this.allUrlRewritings = {};
         this.allContentLengths = [];
+        this.allIntervals = [];
+        this.INTERVAL_DURATION = 25; // in milliseconds
 
-        // To avoid very long dates, let's measure time from the SW initialization
+        // That's our supposed service worker initialization time
+        // TODO: replace by the reference time used inside the SW's Resource Timings
+        // (I have no idea how to find it)
         this.epoch = Date.now();
 
         setInterval(() => {
@@ -157,8 +161,21 @@ class SpeedEstimator {
 
         // If the transfer is ridiculously fast (> 200Mbps), then it most probably comes
         // from browser cache and timing is not reliable.
-        if (time > 0 && timing.transferSize / time < 26214) {
+        if (time > 0 && timing.transferSize > 0 && timing.transferSize / time < 26214) {
             this.allTimings.push(timing);
+            this._splitTimingIntoIntervals(timing);
+        }
+    }
+
+    // To be able to estimate the bandwidth, we split this resource transferSize into
+    // time intervals and add them to our timeline.
+    _splitTimingIntoIntervals(timing) {
+        let startingBlock = Math.floor((timing.responseStart - this.epoch) / this.INTERVAL_DURATION);
+        let endingBlock = Math.floor((timing.responseEnd - this.epoch) / this.INTERVAL_DURATION);
+        let bytesPerBlock = timing.transferSize / ((endingBlock - startingBlock + 1));
+
+        for (var i = startingBlock; i <= endingBlock; i++) {
+            this.allIntervals[i] = (this.allIntervals[i] || 0) + bytesPerBlock;
         }
     }
     
@@ -217,44 +234,66 @@ class SpeedEstimator {
 
     // Reads all given timings and estimate bandwidth
     _estimateBandwidth() {
+        
+        // Let's estimate the bandwidth for some different periods of times (in minutes)
+        const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
 
-        // As several resources can load simulteaneously, there's no simple way to estimate bandwidth.
+        const bandwidths = ages.map(this._estimateBandwidthForAPeriod);
 
-        let intervals = [];
-        let totalTransferedSize = 0;
-        const INTERVAL_DURATION = 25; // in milliseconds
+        // Now we're going to find the average of all these bandwidths, and we give heigher weights
+        // to the most recents.
 
-        // Let's separate page load into small time intervals and estimate the number of bytes loaded in each one
-        this.allTimings.forEach(timing => {
+        let totalWeights = 0;
 
-            let estimatedTransferSize = timing.transferSize;
+        const total = bandwidths.reduce((total, newValue, index) => {
+            
+            if (newValue !== null) {
 
-            if (timing.transferSize && timing.responseStart && timing.responseEnd) {
-                totalTransferedSize += timing.transferSize;
+                // The first value has a weight of 1
+                // The second value of 1/2
+                // The third value of 1/3
+                // etc.
 
-                let startingBlock = Math.floor((timing.responseStart - this.epoch) / INTERVAL_DURATION);
-                let endingBlock = Math.floor((timing.responseEnd - this.epoch) / INTERVAL_DURATION);
-                let bytesPerBlock = timing.transferSize / ((endingBlock - startingBlock) || 1);
+                let weight = 1 / (index + 1);
 
-                for (var i = startingBlock; i <= endingBlock; i++) {
-                    intervals[i] = (intervals[i] || 0) + bytesPerBlock;
-                }
+                totalWeights += weight;
+
+                return total + (newValue * weight);
             }
+
+            return total;
         });
 
-        // Don't answer if we don't have enough data (less than 100KB)
-        if (totalTransferedSize < 102400) {
+        if (totalWeights === 0) {
+            return null;
+        }
+
+        return Math.round(total / totalWeights);
+    }
+
+    // Estimate bandwidth for the last given number of minutes
+    _estimateBandwidthForAPeriod(numberOfMinutes) {
+        
+        // Now minus the number of minutes
+        const from = Date.now() - (numberOfMinutes * 60 * 1000);
+
+        // Retrieves corresponding cells in the timeline array
+        const newArray = this.allTimings.slice(from / this.INTERVAL_DURATION);
+        
+        // Sums up the transfered size in this duration
+        const transferedSize = newArray.reduce((a, b) => a + b);
+        if (transferedSize < 102400) {
             return null;
         }
 
         // Now let's use the 90th percentile of all values
         // From my different tests, that percentile provides good results
-        const nineteenthPercentile = this._percentile(intervals, .9);
+        const nineteenthPercentile = this._percentile(this.allIntervals, .9);
 
-        // Convert bytes per 10ms to kilobytes per second (kilobytes, not kilobits!)
-        const mbps = nineteenthPercentile * 1000 / INTERVAL_DURATION / 1024;
+        // Convert bytes per (this.INTERVAL_DURATION)ms to kilobytes per second (kilobytes, not kilobits!)
+        const mbps = nineteenthPercentile * 1000 / this.INTERVAL_DURATION / 1024;
 
-        return Math.round(mbps);
+        return mbps;
     }
 
     // Returns the value at a given percentile in a numeric array.
@@ -262,18 +301,14 @@ class SpeedEstimator {
     _percentile(arr, p) {
 
         // Remove nulls and transfer to a new array
-        let newArray = arr.filter((cell) => {
-            return cell !== null;
-        });
+        let newArray = arr.filter((cell) => cell !== null);
 
         // Fail if there are no results
         if (newArray.length === 0) {
             return null;
         }
 
-        newArray.sort((a, b) => {
-            return a - b;
-        });
+        newArray.sort((a, b) => a - b);
 
         return newArray[Math.floor(newArray.length * p)];
     }

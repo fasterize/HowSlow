@@ -48,9 +48,6 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (modifiedUrl) {
-        // Saves the new url for later use
-        estimator.addUrlRewriting(event.request.url, modifiedUrl);
-
         // Add credentials to the request, otherwise fetch opens a new connection
         options.credentials = 'include';
     }
@@ -58,7 +55,10 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch((modifiedUrl || event.request), options)
             .then(function(response) {
-                estimator.addContentLength(event.request.url, response);
+                // Saves the new url for later use
+                estimator.addUrlRewriting(event.request.url, response.url);
+                // As well as the content-length header
+                estimator.addContentLength(response.url, response);
                 return response;
             })
     );
@@ -187,7 +187,7 @@ class SpeedEstimator {
     addContentLength(url, response) {
         if (response.type !== 'opaque' && response.headers.has('content-length')) {
             this.allContentLengths.push({
-                url: this._findNewUrl(url),
+                url: url,
                 size: response.headers.get('content-length')
             });
         }

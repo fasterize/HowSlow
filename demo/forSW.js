@@ -46,8 +46,13 @@ self.addEventListener('fetch', (event) => {
         }
     }
 
-    // Add credentials to the request, otherwise fetch opens a new connection
-    let options = (modifiedUrl) ? {credentials: 'include'} : null;
+    if (modifiedUrl) {
+        // Saves the new url for later use
+        this.addUrlRewriting(event.request.url, modifiedUrl);
+
+        // Add credentials to the request, otherwise fetch opens a new connection
+        let options = (modifiedUrl) ? {credentials: 'include'} : null;
+    }
 
     event.respondWith(
         fetch(modifiedUrl ? modifiedUrl : event.request.url, options)
@@ -63,25 +68,40 @@ class SpeedEstimator {
     
     constructor() {
         this.allTimings = [];
+        this.allUrlRewritings = {};
         this.allContentLengths = [];
 
-        // To avoid very long dates, let's measure time from (now - 1000 seconds) 
-        this.epoch = Date.now() - 1000000;
+        // To avoid very long dates, let's measure time from the SW initialization
+        this.epoch = Date.now();
 
         setInterval(() => {
-            const start = Date.now();
-            this.ping = this._estimatePing();
-            const middle = Date.now();
-            this.bandwidth = this._estimateBandwidth();
-            const end = Date.now();
-            console.log('Took %dms for ping and %dms for bandwidth', middle - start, end - middle);
+            this._refreshStats();
+            console.log('Estimated bandwidth: ' + this.bandwidth);
+        }, 1000);
 
-            console.log('Ping: ' + this.ping);
-            console.log('Bandwidth: ' + this.bandwidth);
-        }, 2000);
 
-        // Broadcast a query to all pages from time to time
-        setInterval(() => {
+        // Then listen to the broadcast responses
+        self.addEventListener('message', (event) => {
+            if (event.data.command === 'eatThat') {
+                // Some new timings just arrived from a page
+                event.data.timings.forEach(this._addOneTiming);
+            }
+        });
+    }
+
+    // Updates ping and bandwidth
+    _refreshStats() {
+        this._refreshTimings();
+        this.bandwidth = this._estimateBandwidth();
+    }
+
+    // Collects the latest resource timings
+    _refreshTimings() {
+        if (this._shouldAskTimingsToPage()) {
+            // If the Service Worker doesn't have access to the Resource Timings API, 
+            // we ask to each attached page (= client) its timings.
+            // We won't be able to use them immediately, but they should be there on the next tick
+
             self.clients.matchAll()
                 .then((clients) => {
                     clients.forEach((client) => {
@@ -90,50 +110,67 @@ class SpeedEstimator {
                         });
                     });
                 });
-        }, 2000);
 
-        // Then listen to the broadcast responses
-        self.addEventListener('message', (event) => {
-            if (event.data.command === 'eatThat') {
-                // New timings just arrived from a page
-                this.addTimings(event.data.timings);        
-            }
-        });
+        } else {
+            // The Service Worker has access to the Ressource Timings API,
+            // It's easy, we just have to read it.
+
+            self.performance.getEntriesByType('resource').forEach((timing) => {
+                this._addOneTiming(this._simplifyTimingObject(timing));
+            });
+            
+            // Then we empty the history
+            self.performance.clearResourceTimings();
+            
+            // "The clearResourceTimings() method removes all performance entries [...] and sets 
+            //  the size of the performance data buffer to zero. To set the size of the browser's 
+            //  performance data buffer, use the Performance.setResourceTimingBufferSize() method."
+            self.performance.setResourceTimingBufferSize(200);
+        }
     }
 
-    /*getPing() {
-        return this.ping;
-    }
+    // Saves one timing in the allTimings list
+    // only if it doesn't look like it comes from the browser's cache
+    _addOneTiming(timing) {
 
-    getBandwidth() {
-        return this.bandwidth;
-    }*/
+        // As the Service Worker is able to change the url of a request,
+        // we let's use the new url.
+        timing.name = this._findNewUrl(timing.name);
 
-    addTimings(timings) {
-        timings.forEach((timing) => {
+        // If we don't have the transfer size (Safari & Edge don't provide it)
+        // than let's try to read it from the Content-Length headers.
+        if (!timing.transferSize) {
+            timing.transferSize = this._findContentLength(timing.name);
+        }
 
-            // If this timings doesn't have the transferSize, let's grab it
-            // from the content-length header saved earlier
-            if (!timing.transferSize) {
-                // a reverse loop should be faster and find the right answer
-                for (var i = this.allContentLengths.length - 1; i >= 0; i--) {
-                     if (this.allContentLengths[i].url === timing.name) {
-                        const size = parseInt(this.allContentLengths[i].size, 10);
-                        const time = timing.responseEnd - timing.responseStart;
+        const time = timing.responseEnd - timing.responseStart;
 
-                        // If the transfer is ridiculously fast (> 200Mbps), then it most probably comes
-                        // from browser cache and timing is not reliable.
-                        if (time === 0 || size / time < 26214) {
-                            timing.transferSize = parseInt(this.allContentLengths[i].size, 10);
-                        }
-
-                        break;
-                     }
-                }
-            }
-
+        // If the transfer is ridiculously fast (> 200Mbps), then it most probably comes
+        // from browser cache and timing is not reliable.
+        if (time > 0 && timing.transferSize / time < 26214) {
             this.allTimings.push(timing);
-        });
+        }
+    }
+    
+    // What a good idea we had, to save the Content-Length headers!
+    // Because we need one.
+    _findContentLength(url) {
+        for (var i = this.allContentLengths.length - 1; i >= 0; i--) {
+            if (this.allContentLengths[i].url === url) {
+                return parseInt(this.allContentLengths[i].size, 10);
+            }
+        }
+    }
+
+    // What a good idea we had to save the urls that were modified by the service worker!
+    // Because we need one
+    _findNewUrl(originalUrl) {
+        return this.allUrlRewritings[url] || originalUrl;
+    }
+
+    // Saves url rewritings in a list for later use
+    addUrlRewriting(originalUrl, newUrl) {
+        this.allUrlRewritings[originalUrl] = newUrl;
     }
 
     // Saves the content-length data from a fetched response header
@@ -146,7 +183,7 @@ class SpeedEstimator {
         }
     }
     
-    _estimatePing() {
+    /*_estimatePing() {
         let allPings = this.allTimings.map(timing => {
             // The estimated ping is an average of: DNS lookup time + First connection + SSL handshake
             // in milliseconds.
@@ -165,7 +202,7 @@ class SpeedEstimator {
         });
 
         return this._percentile(allPings, .5);
-    }
+    }*/
 
 
     // Reads all given timings and estimate bandwidth
@@ -175,7 +212,7 @@ class SpeedEstimator {
 
         let intervals = [];
         let totalTransferedSize = 0;
-        const INTERVAL_DURATION = 25;
+        const INTERVAL_DURATION = 25; // in milliseconds
 
         // Let's separate page load into small time intervals and estimate the number of bytes loaded in each one
         this.allTimings.forEach(timing => {
@@ -229,6 +266,29 @@ class SpeedEstimator {
         });
 
         return newArray[Math.floor(newArray.length * p)];
+    }
+
+    _simplifyTimingObject(timing) {
+        return {
+            name: timing.name,
+            transferSize: timing.transferSize,
+            //domainLookupStart: Math.round(this.epoch + timing.domainLookupStart),
+            //domainLookupEnd: Math.round(this.epoch + timing.domainLookupEnd),
+            //connectStart: Math.round(this.epoch + timing.connectStart),
+            //connectEnd: Math.round(this.epoch + timing.connectEnd),
+            //secureConnectionStart: Math.round(this.epoch + timing.secureConnectionStart),
+            responseStart: Math.round(this.epoch + timing.responseStart),
+            responseEnd: Math.round(this.epoch + timing.responseEnd)
+        };
+    }
+
+    // Returns false if the SW has access to the Resource Timings API
+    // Returns true if we need to ask the page for the resource list
+    _shouldAskTimingsToPage() {
+        
+        // TODO: replace User Agent detection with true detection
+
+        return /Edge/.test(self.navigator.userAgent);
     }
 }
 

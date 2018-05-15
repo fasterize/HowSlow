@@ -73,7 +73,20 @@ class HowSlowForPage {
 
         if (!this.firstRequestSent) {
             this.navigationStart = window.performance.timing.navigationStart;
-            // The first HTML resource is as intersting as the others... and maybe more!
+            
+            // The first HTML resource is as intersting as the others... maybe even more!
+            timings.push({
+                name: window.location.href,
+                transferSize: window.timing.transferSize,
+                domainLookupStart: window.timing.domainLookupStart,
+                domainLookupEnd: window.timing.domainLookupEnd,
+                connectStart: window.timing.connectStart,
+                connectEnd: window.timing.connectEnd,
+                secureConnectionStart: window.timing.secureConnectionStart,
+                responseStart: window.timing.responseStart,
+                responseEnd: window.timing.responseEnd
+            });
+
             timings.push(this.simplifyTimingObject(window.performance.getEntriesByType('navigation')[0]));
             this.firstRequestSent = true;
         }

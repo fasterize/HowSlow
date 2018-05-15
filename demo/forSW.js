@@ -166,7 +166,7 @@ class SpeedEstimator {
     // What a good idea we had to save the urls that were modified by the service worker!
     // Because we need one
     _findNewUrl(originalUrl) {
-        return this.allUrlRewritings[url] || originalUrl;
+        return this.allUrlRewritings[originalUrl] || originalUrl;
     }
 
     // Saves url rewritings in a list for later use

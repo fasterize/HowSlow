@@ -238,7 +238,7 @@ class SpeedEstimator {
         // Let's estimate the bandwidth for some different periods of times (in minutes)
         const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
 
-        const bandwidths = ages.map(this._estimateBandwidthForAPeriod);
+        const bandwidths = ages.map((bw) => this._estimateBandwidthForAPeriod(bw));
 
         // Now we're going to find the average of all these bandwidths, and we give heigher weights
         // to the most recents.

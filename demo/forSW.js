@@ -77,7 +77,7 @@ class SpeedEstimator {
 
         setInterval(() => {
             this._refreshStats();
-            console.log('Estimated bandwidth: %dKB/s', this.bandwidth);
+            console.log('Estimated bandwidth: %s KB/s', this.bandwidth || 'unknown');
         }, 1000);
 
 
@@ -98,23 +98,20 @@ class SpeedEstimator {
 
     // Collects the latest resource timings
     _refreshTimings() {
+
+        // TODO: event if the Service Worker has access to Resource Timings,
+        // it should ask for all the requests it couldn't intercept when
+        // it wasn't initialized yet.
+
         if (this._shouldAskTimingsToPage()) {
             // If the Service Worker doesn't have access to the Resource Timings API, 
             // we ask to each attached page (= client) its timings.
             // We won't be able to use them immediately, but they should be there on the next tick
-
-            self.clients.matchAll()
-                .then((clients) => {
-                    clients.forEach((client) => {
-                        client.postMessage({
-                            'command': 'timingsPlz'
-                        });
-                    });
-                });
+            this._askTimingToAllClients();
 
         } else {
             // The Service Worker has access to the Ressource Timings API,
-            // It's easy, we just have to read it.
+            // It's easy, we just read it.
 
             self.performance.getEntriesByType('resource').forEach((timing) => {
                 this._addOneTiming(this._simplifyTimingObject(timing));
@@ -128,6 +125,18 @@ class SpeedEstimator {
             //  performance data buffer, use the Performance.setResourceTimingBufferSize() method."
             self.performance.setResourceTimingBufferSize(200);
         }
+    }
+
+    // Sends a request to all clients
+    _askTimingToAllClients() {
+        self.clients.matchAll()
+            .then((clients) => {
+                clients.forEach((client) => {
+                    client.postMessage({
+                        'command': 'timingsPlz'
+                    });
+                });
+            });
     }
 
     // Saves one timing in the allTimings list
@@ -178,7 +187,7 @@ class SpeedEstimator {
     addContentLength(url, response) {
         if (response.type !== 'opaque' && response.headers.has('content-length')) {
             this.allContentLengths.push({
-                url: url,
+                url: this._findNewUrl(url),
                 size: response.headers.get('content-length')
             });
         }

@@ -261,7 +261,7 @@ class SpeedEstimator {
     _estimateBandwidthForAPeriod(numberOfMinutes) {
         
         // Now minus the number of minutes
-        const from = Date.now() - (numberOfMinutes * 60 * 1000);
+        const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
 
         // Retrieves corresponding cells in the timeline array
         const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);

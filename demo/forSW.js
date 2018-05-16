@@ -266,6 +266,10 @@ class SpeedEstimator {
         // Retrieves corresponding cells in the timeline array
         const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);
         
+        if (newArray.length === 0) {
+            return null;
+        }
+
         // Sums up the transfered size in this duration
         const transferedSize = newArray.reduce((a, b) => a + b);
         if (transferedSize < 102400) {

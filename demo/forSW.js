@@ -264,7 +264,7 @@ class SpeedEstimator {
         const from = Date.now() - (numberOfMinutes * 60 * 1000);
 
         // Retrieves corresponding cells in the timeline array
-        const newArray = this.allTimings.slice(from / this.INTERVAL_DURATION);
+        const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);
         
         // Sums up the transfered size in this duration
         const transferedSize = newArray.reduce((a, b) => a + b);

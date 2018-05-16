@@ -248,7 +248,15 @@ class SpeedEstimator {
 
         for (var i = 0; i < bandwidths.length; i++) {
             if (bandwidths[i] !== null) {
-                let weight = 1 / (i + 1);
+
+                let weight = 1 / Math.pow(i + 1, 2);
+                // With that formula:
+                //  - the weight of the 1st minute is 1
+                //  - of the 10 first minutes is 1/4
+                //  - of the 100 is 1/9
+                //  - of the 1000 is 1/16
+                //  - of the 10000 is 1/25
+
                 total += bandwidths[i] * weight;
                 totalWeights += weight;
             }

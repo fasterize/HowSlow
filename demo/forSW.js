@@ -243,32 +243,18 @@ class SpeedEstimator {
         // Now we're going to find the average of all these bandwidths, and we give heigher weights
         // to the most recents.
 
+        let total = 0;
         let totalWeights = 0;
 
-        const total = bandwidths.reduce((total, newValue, index) => {
-            
-            if (newValue !== null) {
-
-                // The first value has a weight of 1
-                // The second value of 1/2
-                // The third value of 1/3
-                // etc.
-
-                let weight = 1 / (index + 1);
-
+        for (var i = 0; i < bandwidths.length; i++) {
+            if (bandwidths[i] !== null) {
+                let weight = 1 / (i + 1);
+                total += bandwidths[i] * weight;
                 totalWeights += weight;
-
-                return total + (newValue * weight);
             }
-
-            return total;
-        });
-
-        if (totalWeights === 0) {
-            return null;
         }
 
-        return Math.round(total / totalWeights);
+        return totalWeights === 0 ? null : Math.round(total / totalWeights);
     }
 
     // Estimate bandwidth for the last given number of minutes

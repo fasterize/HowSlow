@@ -278,7 +278,7 @@ class SpeedEstimator {
 
         // Now let's use the 90th percentile of all values
         // From my different tests, that percentile provides good results
-        const nineteenthPercentile = this._percentile(this.allIntervals, .9);
+        const nineteenthPercentile = this._percentile(newArray, .9);
 
         // Convert bytes per (this.INTERVAL_DURATION)ms to kilobytes per second (kilobytes, not kilobits!)
         const mbps = nineteenthPercentile * 1000 / this.INTERVAL_DURATION / 1024;

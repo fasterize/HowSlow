@@ -262,7 +262,23 @@ class SpeedEstimator {
             }
         }
 
-        return totalWeights === 0 ? null : Math.round(total / totalWeights);
+        // Some mobile browsers (Android) can tell from the network currently used
+        // the theorical max speed of that network with "connection.downlinkMax".
+        // Exemple: downlinkMax for 2G is 0.134 Mbps
+
+        if (totalWeights === 0) {
+            return null;
+        }
+
+        let result = total / totalWeights;
+        
+        // Always cap bandwidth with the theorical max speed of underlying network
+        // (when the Network Information API is available, of course)
+        // It makes the library more reactive when, for exemple, the user
+        // sudenly looses its 3G signal and gets 2G instead.
+        result = Math.min(result, this._getDownlinkMax());
+
+        return Math.round(result);
     }
 
     // Estimate bandwidth for the last given number of minutes
@@ -332,6 +348,13 @@ class SpeedEstimator {
         // TODO: replace User Agent detection with true detection
 
         return /Edge/.test(self.navigator.userAgent);
+    }
+
+    _getDownlinkMax() {
+        if (self.navigator.connection && self.navigator.connection.downlinkMax > 0) {
+            return self.navigator.connection.downlinkMax * 256; // convert Mbps to KBps
+        }
+        return Infinity;
     }
 }
 

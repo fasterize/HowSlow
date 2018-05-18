@@ -1,3 +1,42 @@
+/* ----- Adapt to your needs ----- */
+
+function myUrlRewritingFunction(url) {
+    
+    // This is some demo code. Adapt to your needs.
+
+    // Let's intercept every call to image.jpg
+    const regexp = /image\.jpg\?timestamp=(.*)$/;
+    const execResult = regexp.exec(url);
+
+    if (execResult !== null) {
+
+        // ... and choose the right image!
+
+        if (estimator.bandwidth > 3000) {
+            return 'image-XXL.jpg?timestamp=' + execResult[1];
+        } else if (estimator.bandwidth > 1000) {
+            return 'image-XL.jpg?timestamp=' + execResult[1];
+        } else if (estimator.bandwidth > 300) {
+            return 'image-L.jpg?timestamp=' + execResult[1];
+        } else if (estimator.bandwidth > 100) {
+            return 'image-M.jpg?timestamp=' + execResult[1];
+        } else if (estimator.bandwidth > 30) {
+            return 'image-S.jpg?timestamp=' + execResult[1];
+        } else if (estimator.bandwidth > 10) {
+            return 'image-XS.jpg?timestamp=' + execResult[1];
+        } else {
+            return 'image-unknown.jpg?timestamp=' + execResult[1];
+        }
+    }
+
+    // Return null for urls you don't want to change
+    return null;
+}
+
+
+
+/* ----- No change below this line ----- */
+
 // Service Worker initialization
 self.addEventListener('install', () => {
     self.skipWaiting(); // Activate worker immediately
@@ -19,33 +58,8 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let modifiedUrl = null;
+    let modifiedUrl = myUrlRewritingFunction(event.request.url);
     let options = {};
-
-    // Intercept the image calls...
-    const regexp = /image\.jpg\?timestamp=(.*)$/;
-    const execResult = regexp.exec(event.request.url);
-
-    if (execResult !== null) {
-
-        // ... and choose the right image!
-
-        if (estimator.bandwidth > 3000) {
-            modifiedUrl = 'image-XXL.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 1000) {
-            modifiedUrl = 'image-XL.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 300) {
-            modifiedUrl = 'image-L.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 100) {
-            modifiedUrl = 'image-M.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 30) {
-            modifiedUrl = 'image-S.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 10) {
-            modifiedUrl = 'image-XS.jpg?timestamp=' + execResult[1];
-        } else {
-            modifiedUrl = 'image-unknown.jpg?timestamp=' + execResult[1];
-        }
-    }
 
     if (modifiedUrl) {
         // Add credentials to the request, otherwise fetch opens a new connection

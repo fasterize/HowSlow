@@ -79,17 +79,20 @@ class SpeedEstimator {
         // (I have no idea how to find it)
         this.epoch = Date.now();
 
+        // Start the ticker
         setInterval(() => {
             this._refreshStats();
             console.log('Estimated bandwidth: %s KB/s', this.bandwidth || 'unknown');
         }, 1000);
 
 
-        // Then listen to the broadcast responses
+        // Listen to the broadcast responses
         self.addEventListener('message', (event) => {
             if (event.data.command === 'eatThat') {
                 // Some new timings just arrived from a page
-                event.data.timings.forEach(this._addOneTiming);
+                event.data.timings.forEach((timing) => {
+                    this._addOneTiming(timing)
+                });
             }
         });
     }

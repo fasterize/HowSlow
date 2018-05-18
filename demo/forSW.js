@@ -1,17 +1,17 @@
 // Service Worker initialization
 self.addEventListener('install', () => {
-    console.log('SW installed');
-
     self.skipWaiting(); // Activate worker immediately
 });
 
 self.addEventListener('activate', () => {
     if (self.clients && self.clients.claim) {
-        console.log('SW activated');
-
         // Make it available immediately
         self.clients.claim().then(() => {
-            console.log('SW claimed');
+            // The service worker is ready to work
+
+            // The attached pages might already have some resource timings available.
+            // Let's ask!
+            estimator._askTimingToAllClients();
         });
     }
 });
@@ -131,13 +131,13 @@ class SpeedEstimator {
         }
     }
 
-    // Sends a request to all clients
+    // Sends a request to all clients for their resource timings.
     _askTimingToAllClients() {
         self.clients.matchAll()
             .then((clients) => {
                 clients.forEach((client) => {
                     client.postMessage({
-                        'command': 'timingsPlz'
+                        command: 'timingsPlz'
                     });
                 });
             });

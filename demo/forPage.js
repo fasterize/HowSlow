@@ -72,22 +72,23 @@ class HowSlowForPage {
         var timings = [];
 
         if (!this.firstRequestSent) {
+
+            // Save this for later
             this.navigationStart = window.performance.timing.navigationStart;
             
             // The first HTML resource is as intersting as the others... maybe even more!
             timings.push({
                 name: window.location.href,
-                transferSize: window.timing.transferSize,
-                domainLookupStart: window.timing.domainLookupStart,
-                domainLookupEnd: window.timing.domainLookupEnd,
-                connectStart: window.timing.connectStart,
-                connectEnd: window.timing.connectEnd,
-                secureConnectionStart: window.timing.secureConnectionStart,
-                responseStart: window.timing.responseStart,
-                responseEnd: window.timing.responseEnd
+                transferSize: window.performance.timing.transferSize,
+                domainLookupStart: window.performance.timing.domainLookupStart,
+                domainLookupEnd: window.performance.timing.domainLookupEnd,
+                connectStart: window.performance.timing.connectStart,
+                connectEnd: window.performance.timing.connectEnd,
+                secureConnectionStart: window.performance.timing.secureConnectionStart,
+                responseStart: window.performance.timing.responseStart,
+                responseEnd: window.performance.timing.responseEnd
             });
 
-            timings.push(this.simplifyTimingObject(window.performance.getEntriesByType('navigation')[0]));
             this.firstRequestSent = true;
         }
 
@@ -98,6 +99,7 @@ class HowSlowForPage {
         // Now lets clear resourceTimings
         window.performance.clearResourceTimings();
         window.performance.setResourceTimingBufferSize(200);
+        
         // TODO: add an option to avoid clearing ResourceTimings...
         // ... some other scripts might need them!
 

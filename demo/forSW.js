@@ -109,12 +109,24 @@ class SpeedEstimator {
                 });
             }
         });
+
+        // Open database connection
+        var dbPromise = indexedDB.open('howslow', 1, (upgradeDb) => {
+            // And create the DB if it doesn't exist yet
+            if (!upgradeDb.objectStoreNames.contains('bw')) {
+                upgradeDb.createObjectStore('bw');
+            }
+        }).onsuccess = (event) => {
+            this.database = event.target.result;
+            this._retrieveBandwidth();
+        };
     }
 
     // Updates ping and bandwidth
     _refreshStats() {
         this._refreshTimings();
         this.bandwidth = this._estimateBandwidth();
+        this._saveBandwidth();
     }
 
     // Collects the latest resource timings
@@ -372,6 +384,27 @@ class SpeedEstimator {
             return self.navigator.connection.downlinkMax * 256; // convert Mbps to KBps
         }
         return Infinity;
+    }
+    
+    // Saves bandwidth to IndexedDB
+    _saveBandwidth() {
+        let object = {
+            id: 1,
+            bandwidth: this.bandwidth
+        };
+
+        if (self.navigator.connection && self.navigator.connection.type) {
+            object.connectionType = self.navigator.connection.type;
+        }
+
+        this.database.transaction('howslow').objectStore('bw').set(object);
+    }
+
+    // Reads the latest known bandwidth from IndexedDB
+    _retrieveBandwidth() {
+        this.database.transaction('howslow').objectStore('bw').get(1).onsuccess = (event) => {
+            alert('Bandwidth from database: ', event.target.result);
+        };
     }
 }
 

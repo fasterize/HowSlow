@@ -391,6 +391,10 @@ class SpeedEstimator {
             this.database = event.target.result;
             this._retrieveBandwidth();
         };
+
+        request.onerror = function(event) {
+            console.error('openDb:', event.target.errorCode);
+        };
     }
 
     // Saves bandwidth to IndexedDB

@@ -400,7 +400,6 @@ class SpeedEstimator {
     // Saves bandwidth to IndexedDB
     _saveBandwidth() {
         let object = {
-            id: 1,
             bandwidth: this.bandwidth
         };
 
@@ -408,7 +407,7 @@ class SpeedEstimator {
             object.connectionType = self.navigator.connection.type;
         }
 
-        this.database.transaction('bw', 'readwrite').objectStore('bw').put(object);
+        this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
     }
 
     // Reads the latest known bandwidth from IndexedDB

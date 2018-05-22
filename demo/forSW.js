@@ -392,7 +392,7 @@ class SpeedEstimator {
             this._retrieveBandwidth();
         };
 
-        request.onerror = function(event) {
+        dbPromise.onerror = function(event) {
             console.error('openDb:', event.target.errorCode);
         };
     }

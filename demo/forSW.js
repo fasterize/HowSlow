@@ -397,12 +397,12 @@ class SpeedEstimator {
             object.connectionType = self.navigator.connection.type;
         }
 
-        this.database.transaction('howslow').objectStore('bw').set(object);
+        this.database.transaction.objectStore('bw').put(object);
     }
 
     // Reads the latest known bandwidth from IndexedDB
     _retrieveBandwidth() {
-        this.database.transaction('howslow').objectStore('bw').get(1).onsuccess = (event) => {
+        this.database.transaction.objectStore('bw').get(1).onsuccess = (event) => {
             alert('Bandwidth from database: ', event.target.result);
         };
     }

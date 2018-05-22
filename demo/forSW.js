@@ -110,16 +110,7 @@ class SpeedEstimator {
             }
         });
 
-        // Open database connection
-        var dbPromise = indexedDB.open('howslow', 1, (upgradeDb) => {
-            // And create the DB if it doesn't exist yet
-            if (!upgradeDb.objectStoreNames.contains('bw')) {
-                upgradeDb.createObjectStore('bw');
-            }
-        }).onsuccess = (event) => {
-            this.database = event.target.result;
-            this._retrieveBandwidth();
-        };
+        this._initDatabase();
     }
 
     // Updates ping and bandwidth
@@ -386,6 +377,22 @@ class SpeedEstimator {
         return Infinity;
     }
     
+    _initDatabase() {
+        // Open database connection
+        var dbPromise = self.indexedDB.open('howslow', 1)
+
+            .onsuccess = (event) => {
+                this.database = event.target.result;
+                this._retrieveBandwidth();
+            }
+
+            .onupgradeneeded = (event) => {
+                if (!event.target.result.objectStoreNames.contains('bw')) {
+                    event.target.result.createObjectStore('bw');
+                }
+            };
+    }
+
     // Saves bandwidth to IndexedDB
     _saveBandwidth() {
         let object = {

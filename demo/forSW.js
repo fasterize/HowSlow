@@ -381,16 +381,16 @@ class SpeedEstimator {
         // Open database connection
         var dbPromise = self.indexedDB.open('howslow', 1)
 
-            .onsuccess = (event) => {
-                this.database = event.target.result;
-                this._retrieveBandwidth();
+        dbPromise.onupgradeneeded = (event) => {
+            if (!event.target.result.objectStoreNames.contains('bw')) {
+                event.target.result.createObjectStore('bw');
             }
+        };
 
-            .onupgradeneeded = (event) => {
-                if (!event.target.result.objectStoreNames.contains('bw')) {
-                    event.target.result.createObjectStore('bw');
-                }
-            };
+        dbPromise.onsuccess = (event) => {
+            this.database = event.target.result;
+            this._retrieveBandwidth();
+        };
     }
 
     // Saves bandwidth to IndexedDB

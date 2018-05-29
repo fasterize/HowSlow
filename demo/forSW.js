@@ -115,9 +115,29 @@ class SpeedEstimator {
 
     // Updates ping and bandwidth
     _refreshStats() {
+        
+        // Update the data from resource timings
         this._refreshTimings();
+        
+        // Use the data to estimate bandwidth
         this.bandwidth = this._estimateBandwidth();
-        this._saveBandwidth();
+        
+        // If the bandwith was correctly estimated, we save it to database
+        if (this.bandwidth) {
+            this._saveBandwidth();
+        
+        // If we couldn't estimate bw, we use the previous one from database
+        } else {
+            
+            // But first, we check if it was on the same network type (3G, wifi...)
+            if (this.lastKnownConnectionType 
+                && self.navigator.connection 
+                && self.navigator.connection.type
+                && this.lastKnownConnectionType === self.navigator.connection.type) {
+
+                this.bandwidth = this.lastKnownBandwidth;
+            }
+        }
     }
 
     // Collects the latest resource timings
@@ -413,7 +433,8 @@ class SpeedEstimator {
     // Reads the latest known bandwidth from IndexedDB
     _retrieveBandwidth() {
         this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-            console.log('Bandwidth from database: ', event.target.result);
+            this.lastKnownBandwidth = event.target.result.bandwidth;
+            this.lastKnownConnectionType = event.target.result.connectionType;
         };
     }
 }

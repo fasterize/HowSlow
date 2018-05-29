@@ -11,18 +11,19 @@ function myUrlRewritingFunction(url) {
     if (execResult !== null) {
 
         // ... and choose the right image!
+        var bandwidth = estimator.getBandwidth();
 
-        if (estimator.bandwidth > 3000) {
+        if (bandwidth > 3000) {
             return 'image-XXL.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 1000) {
+        } else if (bandwidth > 1000) {
             return 'image-XL.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 300) {
+        } else if (bandwidth > 300) {
             return 'image-L.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 100) {
+        } else if (bandwidth > 100) {
             return 'image-M.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 30) {
+        } else if (bandwidth > 30) {
             return 'image-S.jpg?timestamp=' + execResult[1];
-        } else if (estimator.bandwidth > 10) {
+        } else if (bandwidth > 10) {
             return 'image-XS.jpg?timestamp=' + execResult[1];
         } else {
             return 'image-unknown.jpg?timestamp=' + execResult[1];
@@ -50,7 +51,7 @@ self.addEventListener('activate', () => {
 
             // The attached pages might already have some resource timings available.
             // Let's ask!
-            estimator._askTimingToAllClients();
+            estimator.askTimingToAllClients();
         });
     }
 });
@@ -95,72 +96,71 @@ class SpeedEstimator {
 
         // Start the ticker
         setInterval(() => {
-            this._refreshStats();
+            this.refreshStats();
             console.log('Estimated bandwidth: %s KB/s', this.bandwidth || 'unknown');
         }, 1000);
-
 
         // Listen to the broadcast responses
         self.addEventListener('message', (event) => {
             if (event.data.command === 'eatThat') {
                 // Some new timings just arrived from a page
                 event.data.timings.forEach((timing) => {
-                    this._addOneTiming(timing)
+                    this.addOneTiming(timing)
                 });
             }
         });
 
-        this._initDatabase();
+        this.initDatabase();
+    }
+
+    getBandwidth() {
+        if (this.bandwidth) {
+            return this.bandwidth;
+        }
+
+        // If we couldn't estimate bandwidth yet, but we've got a record in database
+        // We serve the saved bandwidth
+        if (!this.lastKnownConnectionType
+            || !self.navigator.connection
+            || !self.navigator.connection.type
+            || this.lastKnownConnectionType === self.navigator.connection.type) {
+
+            return this.lastKnownBandwidth;
+        }
+
+        return null;
     }
 
     // Updates ping and bandwidth
-    _refreshStats() {
+    refreshStats() {
         
         // Update the data from resource timings
-        this._refreshTimings();
+        this.refreshTimings();
         
         // Use the data to estimate bandwidth
-        this.bandwidth = this._estimateBandwidth();
+        this.bandwidth = this.estimateBandwidth();
         
         // If the bandwith was correctly estimated, we save it to database
         if (this.bandwidth) {
-            this._saveBandwidth();
-        
-        // If we couldn't estimate bw, we use the previous one from database
-        } else {
-            
-            // But first, we check if it was on the same network type (3G, wifi...)
-            if (this.lastKnownConnectionType
-                && self.navigator.connection
-                && self.navigator.connection.type
-                && this.lastKnownConnectionType !== self.navigator.connection.type) {
-
-                return;
-            }
-
-            this.bandwidth = this.lastKnownBandwidth;
+            this.saveBandwidth();
         }
     }
 
     // Collects the latest resource timings
-    _refreshTimings() {
+    refreshTimings() {
 
-        // TODO: event if the Service Worker has access to Resource Timings,
-        // it should ask for all the requests it couldn't intercept when
-        // it wasn't initialized yet.
-
-        if (this._shouldAskTimingsToPage()) {
+        if (this.shouldAskTimingsToPage()) {
             // If the Service Worker doesn't have access to the Resource Timings API, 
             // we ask to each attached page (= client) its timings.
             // We won't be able to use them immediately, but they should be there on the next tick
-            this._askTimingToAllClients();
+            this.askTimingToAllClients();
 
         } else {
             // The Service Worker has access to the Ressource Timings API,
             // It's easy, we just read it.
 
             self.performance.getEntriesByType('resource').forEach((timing) => {
-                this._addOneTiming(this._simplifyTimingObject(timing));
+                this.addOneTiming(this.simplifyTimingObject(timing));
             });
             
             // Then we empty the history
@@ -174,7 +174,7 @@ class SpeedEstimator {
     }
 
     // Sends a request to all clients for their resource timings.
-    _askTimingToAllClients() {
+    askTimingToAllClients() {
         self.clients.matchAll()
             .then((clients) => {
                 clients.forEach((client) => {
@@ -187,16 +187,16 @@ class SpeedEstimator {
 
     // Saves one timing in the allTimings list
     // only if it doesn't look like it comes from the browser's cache
-    _addOneTiming(timing) {
+    addOneTiming(timing) {
 
         // As the Service Worker is able to change the url of a request,
         // we let's use the new url.
-        timing.name = this._findNewUrl(timing.name);
+        timing.name = this.findNewUrl(timing.name);
 
         // If we don't have the transfer size (Safari & Edge don't provide it)
         // than let's try to read it from the Content-Length headers.
         if (!timing.transferSize) {
-            timing.transferSize = this._findContentLength(timing.name);
+            timing.transferSize = this.findContentLength(timing.name);
         }
 
         const time = timing.responseEnd - timing.responseStart;
@@ -205,13 +205,13 @@ class SpeedEstimator {
         // from browser cache and timing is not reliable.
         if (time > 0 && timing.transferSize > 0 && timing.transferSize / time < 26214) {
             this.allTimings.push(timing);
-            this._splitTimingIntoIntervals(timing);
+            this.splitTimingIntoIntervals(timing);
         }
     }
 
     // To be able to estimate the bandwidth, we split this resource transferSize into
     // time intervals and add them to our timeline.
-    _splitTimingIntoIntervals(timing) {
+    splitTimingIntoIntervals(timing) {
         let startingBlock = Math.floor((timing.responseStart - this.epoch) / this.INTERVAL_DURATION);
         let endingBlock = Math.floor((timing.responseEnd - this.epoch) / this.INTERVAL_DURATION);
         let bytesPerBlock = timing.transferSize / ((endingBlock - startingBlock + 1));
@@ -223,7 +223,7 @@ class SpeedEstimator {
     
     // What a good idea we had, to save the Content-Length headers!
     // Because we need one.
-    _findContentLength(url) {
+    findContentLength(url) {
         for (var i = this.allContentLengths.length - 1; i >= 0; i--) {
             if (this.allContentLengths[i].url === url) {
                 return parseInt(this.allContentLengths[i].size, 10);
@@ -233,7 +233,7 @@ class SpeedEstimator {
 
     // What a good idea we had to save the urls that were modified by the service worker!
     // Because we need one
-    _findNewUrl(originalUrl) {
+    findNewUrl(originalUrl) {
         return this.allUrlRewritings[originalUrl] || originalUrl;
     }
 
@@ -252,7 +252,7 @@ class SpeedEstimator {
         }
     }
     
-    /*_estimatePing() {
+    /*estimatePing() {
         let allPings = this.allTimings.map(timing => {
             // The estimated ping is an average of: DNS lookup time + First connection + SSL handshake
             // in milliseconds.
@@ -270,17 +270,17 @@ class SpeedEstimator {
             return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp) / roundtripsCount);
         });
 
-        return this._percentile(allPings, .5);
+        return this.percentile(allPings, .5);
     }*/
 
 
     // Reads all given timings and estimate bandwidth
-    _estimateBandwidth() {
+    estimateBandwidth() {
         
         // Let's estimate the bandwidth for some different periods of times (in minutes)
         const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
 
-        const bandwidths = ages.map((bw) => this._estimateBandwidthForAPeriod(bw));
+        const bandwidths = ages.map((bw) => this.estimateBandwidthForAPeriod(bw));
 
         // Now we're going to find the average of all these bandwidths, and we give heigher weights
         // to the most recents.
@@ -318,13 +318,13 @@ class SpeedEstimator {
         // (when the Network Information API is available, of course)
         // It makes the library more reactive when, for exemple, the user
         // sudenly looses its 3G signal and gets 2G instead.
-        result = Math.min(result, this._getDownlinkMax());
+        result = Math.min(result, this.getDownlinkMax());
 
         return Math.round(result);
     }
 
     // Estimate bandwidth for the last given number of minutes
-    _estimateBandwidthForAPeriod(numberOfMinutes) {
+    estimateBandwidthForAPeriod(numberOfMinutes) {
         
         // Now minus the number of minutes
         const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
@@ -344,7 +344,7 @@ class SpeedEstimator {
 
         // Now let's use the 90th percentile of all values
         // From my different tests, that percentile provides good results
-        const nineteenthPercentile = this._percentile(newArray, .9);
+        const nineteenthPercentile = this.percentile(newArray, .9);
 
         // Convert bytes per (this.INTERVAL_DURATION)ms to kilobytes per second (kilobytes, not kilobits!)
         const mbps = nineteenthPercentile * 1000 / this.INTERVAL_DURATION / 1024;
@@ -354,7 +354,7 @@ class SpeedEstimator {
 
     // Returns the value at a given percentile in a numeric array.
     // Not very accurate, but accurate enough for our needs.
-    _percentile(arr, p) {
+    percentile(arr, p) {
 
         // Remove nulls and transfer to a new array
         let newArray = arr.filter((cell) => cell !== null);
@@ -369,7 +369,7 @@ class SpeedEstimator {
         return newArray[Math.floor(newArray.length * p)];
     }
 
-    _simplifyTimingObject(timing) {
+    simplifyTimingObject(timing) {
         return {
             name: timing.name,
             transferSize: timing.transferSize,
@@ -385,21 +385,21 @@ class SpeedEstimator {
 
     // Returns false if the SW has access to the Resource Timings API
     // Returns true if we need to ask the page for the resource list
-    _shouldAskTimingsToPage() {
+    shouldAskTimingsToPage() {
         
         // TODO: replace User Agent detection with true detection
 
         return /Edge/.test(self.navigator.userAgent);
     }
 
-    _getDownlinkMax() {
+    getDownlinkMax() {
         if (self.navigator.connection && self.navigator.connection.downlinkMax > 0) {
             return self.navigator.connection.downlinkMax * 256; // convert Mbps to KBps
         }
         return Infinity;
     }
     
-    _initDatabase() {
+    initDatabase() {
         // Open database connection
         var dbPromise = self.indexedDB.open('howslow', 1)
 
@@ -411,31 +411,26 @@ class SpeedEstimator {
 
         dbPromise.onsuccess = (event) => {
             this.database = event.target.result;
-            this._retrieveBandwidth();
+            this.retrieveBandwidth();
         };
 
-        dbPromise.onerror = function(event) {
-            console.error('openDb:', event.target.errorCode);
-        };
+        // Not handling DB errors cause it's ok, we can still work without DB
     }
 
     // Saves bandwidth to IndexedDB
-    _saveBandwidth() {
+    saveBandwidth() {
         let object = {
-            bandwidth: this.bandwidth
+            bandwidth: this.bandwidth,
+            connectionType: self.navigator.connection && self.navigator.connection.type
         };
-
-        if (self.navigator.connection && self.navigator.connection.type) {
-            object.connectionType = self.navigator.connection.type;
-        }
 
         this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
     }
 
     // Reads the latest known bandwidth from IndexedDB
-    _retrieveBandwidth() {
+    retrieveBandwidth() {
         this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-            this.lastKnownBandwidth = event.target.result.bandwidth;
+            this.lastKnownBandwidth = event.target.result.bandwidth || null;
             this.lastKnownConnectionType = event.target.result.connectionType;
         };
     }

@@ -130,13 +130,15 @@ class SpeedEstimator {
         } else {
             
             // But first, we check if it was on the same network type (3G, wifi...)
-            if (this.lastKnownConnectionType 
-                && self.navigator.connection 
+            if (this.lastKnownConnectionType
+                && self.navigator.connection
                 && self.navigator.connection.type
-                && this.lastKnownConnectionType === self.navigator.connection.type) {
+                && this.lastKnownConnectionType !== self.navigator.connection.type) {
 
-                this.bandwidth = this.lastKnownBandwidth;
+                return;
             }
+
+            this.bandwidth = this.lastKnownBandwidth;
         }
     }
 

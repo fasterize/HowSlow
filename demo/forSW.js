@@ -401,7 +401,7 @@ class SpeedEstimator {
     
     initDatabase() {
         // Open database connection
-        var dbPromise = self.indexedDB.open('howslow', 1)
+        let dbPromise = self.indexedDB.open('howslow', 1)
 
         dbPromise.onupgradeneeded = (event) => {
             if (!event.target.result.objectStoreNames.contains('bw')) {
@@ -424,7 +424,9 @@ class SpeedEstimator {
             connectionType: self.navigator.connection && self.navigator.connection.type
         };
 
-        this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
+        if (this.database) {
+            this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
+        }
     }
 
     // Reads the latest known bandwidth from IndexedDB

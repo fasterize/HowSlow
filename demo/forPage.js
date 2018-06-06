@@ -1,12 +1,17 @@
 class HowSlowForPage {
     
     constructor(swPath) {
+        this.bandwidth = null;
+        this.ttl = null;
+
         this.initSW(swPath)
             .then(() => this.listenToSW())
             .catch((error) => console.log('[HowSlow]' + error));
 
         this.firstRequestSent = false;
         this.navigationStart = 0;
+
+        this.autoUpdateStats();
     }
 
     // Initializes the Service Worker, or at least tries
@@ -117,6 +122,22 @@ class HowSlowForPage {
             secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
             responseStart: Math.round(this.navigationStart + timing.responseStart),
             responseEnd: Math.round(this.navigationStart + timing.responseEnd)
+        };
+    }
+
+    // Refresh bandwidth & TTL by reading from the IndexedDB every second
+    autoUpdateStats() {
+        let dbPromise = self.indexedDB.open('howslow', 1)
+        
+        dbPromise.onsuccess = (event) => {
+            let database = event.target.result;
+            
+            setInterval(() => {
+                database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
+                    this.bandwidth = event.target.result.bandwidth || null;
+                    this.ttl = event.target.result.ttl || null;
+                };
+            }, 1000);
         };
     }
 }

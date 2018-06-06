@@ -131,7 +131,7 @@ class SpeedEstimator {
         return null;
     }
 
-    // Updates ping and bandwidth
+    // Updates bandwidth & ttl
     refreshStats() {
         
         // Update the data from resource timings
@@ -139,6 +139,7 @@ class SpeedEstimator {
         
         // Use the data to estimate bandwidth
         this.bandwidth = this.estimateBandwidth();
+        this.ttl = this.estimateTTL();
         
         // If the bandwith was correctly estimated, we save it to database
         if (this.bandwidth) {
@@ -252,9 +253,9 @@ class SpeedEstimator {
         }
     }
     
-    /*estimatePing() {
+    estimateTTL() {
         let allPings = this.allTimings.map(timing => {
-            // The estimated ping is an average of: DNS lookup time + First connection + SSL handshake
+            // The estimated TTL is an average of: DNS lookup time + First connection + SSL handshake
             // in milliseconds.
             //
             // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
@@ -271,7 +272,7 @@ class SpeedEstimator {
         });
 
         return this.percentile(allPings, .5);
-    }*/
+    }
 
 
     // Reads all given timings and estimate bandwidth
@@ -373,11 +374,11 @@ class SpeedEstimator {
         return {
             name: timing.name,
             transferSize: timing.transferSize,
-            //domainLookupStart: Math.round(this.epoch + timing.domainLookupStart),
-            //domainLookupEnd: Math.round(this.epoch + timing.domainLookupEnd),
-            //connectStart: Math.round(this.epoch + timing.connectStart),
-            //connectEnd: Math.round(this.epoch + timing.connectEnd),
-            //secureConnectionStart: Math.round(this.epoch + timing.secureConnectionStart),
+            domainLookupStart: Math.round(this.epoch + timing.domainLookupStart),
+            domainLookupEnd: Math.round(this.epoch + timing.domainLookupEnd),
+            connectStart: Math.round(this.epoch + timing.connectStart),
+            connectEnd: Math.round(this.epoch + timing.connectEnd),
+            secureConnectionStart: Math.round(this.epoch + timing.secureConnectionStart),
             responseStart: Math.round(this.epoch + timing.responseStart),
             responseEnd: Math.round(this.epoch + timing.responseEnd)
         };

@@ -63,8 +63,10 @@
         const bwDisplay = document.getElementById('bwDisplay');
         const rttDisplay = document.getElementById('rttDisplay');
         setInterval(function() {
-            bwDisplay.innerHTML = window.howslow.bandwidth || 'unknown ';
-            rttDisplay.innerHTML = window.howslow.rtt || 'unknown ';
+            if (window.howslow) {
+                bwDisplay.innerHTML = window.howslow.bandwidth || 'unknown ';
+                rttDisplay.innerHTML = window.howslow.rtt || 'unknown ';
+            }
         }, 500);
 
         // Autostop parameter

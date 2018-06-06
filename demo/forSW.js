@@ -97,7 +97,6 @@ class SpeedEstimator {
         // Start the ticker
         setInterval(() => {
             this.refreshStats();
-            console.log('Estimated bandwidth: %s KB/s', this.bandwidth || 'unknown');
         }, 1000);
 
         // Listen to the broadcast responses
@@ -250,8 +249,8 @@ class SpeedEstimator {
         }
     }
 
-    // What a good idea we had to save the urls that were modified by the service worker!
-    // Because we need one
+    // And what a good idea we had to also save the urls that were modified by the service worker!
+    // Because we need one.
     findNewUrl(originalUrl) {
         return this.allUrlRewritings[originalUrl] || originalUrl;
     }
@@ -271,45 +270,14 @@ class SpeedEstimator {
         }
     }
 
-    // Reads all given timings and estimate bandwidth
+    // Reads timings and estimates bandwidth
     estimateBandwidth() {
         
         // Let's estimate the bandwidth for some different periods of times (in minutes)
         const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
-
         const bandwidths = ages.map((bw) => this.estimateBandwidthForAPeriod(bw));
-
-        // Now we're going to find the average of all these bandwidths, and we give heigher weights
-        // to the most recents.
-
-        let total = 0;
-        let totalWeights = 0;
-
-        for (var i = 0; i < bandwidths.length; i++) {
-            if (bandwidths[i] !== null) {
-
-                let weight = 1 / Math.pow(i + 1, 2);
-                // With that formula:
-                //  - the weight of the 1st minute is 1
-                //  - of the 10 first minutes is 1/4
-                //  - of the 100 is 1/9
-                //  - of the 1000 is 1/16
-                //  - of the 10000 is 1/25
-
-                total += bandwidths[i] * weight;
-                totalWeights += weight;
-            }
-        }
-
-        // Some mobile browsers (Android) can tell from the network currently used
-        // the theorical max speed of that network with "connection.downlinkMax".
-        // Exemple: downlinkMax for 2G is 0.134 Mbps
-
-        if (totalWeights === 0) {
-            return null;
-        }
-
-        let result = total / totalWeights;
+        
+        let result = this.averageWithWeight(bandwidths);
         
         // Always cap bandwidth with the theorical max speed of underlying network
         // (when the Network Information API is available, of course)
@@ -320,36 +288,10 @@ class SpeedEstimator {
         return Math.round(result);
     }
 
-    // Reads all given timings and estimate bandwidth
-    estimateRTT() {
-        let allPings = this.allTimings.map(timing => {
-            // The estimated RTT is an average of: 
-            // DNS lookup time + First connection + SSL handshake + Time to First Byte
-            // in milliseconds.
-            //
-            // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
-            // So we use the resource's protocol
-            //
-            const dns = timing.domainLookupEnd - timing.domainLookupStart;
-            const tcp = timing.connectEnd - timing.connectStart;
-            const ttfb = timing.responseStart - timing.requestStart;
-
-            // If the given timing has a name, than it's for a resource, rather than the main HTML request:
-            const sslHandshake = +(timing.name ? (timing.name.indexOf('https:') === 0) : (protocol === 'https:'));
-            
-            // Let's consider that any timing under 10ms is not valuable 
-            const roundtripsCount = (dns > 10) + (tcp > 10) + sslHandshake + (ttfb > 10);
-            
-            return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp + ttfb) / roundtripsCount);
-        });
-
-        return this.percentile(allPings, .5);
-    }
-
-    // Estimate bandwidth for the last given number of minutes
+    // Estimates bandwidth for the last given number of minutes
     estimateBandwidthForAPeriod(numberOfMinutes) {
         
-        // Now minus the number of minutes
+        // Now, minus the number of minutes
         const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
 
         // Retrieves corresponding cells in the timeline array
@@ -375,6 +317,48 @@ class SpeedEstimator {
         return mbps;
     }
 
+    // Reads timings and estimates Round Trip Time
+    estimateRTT() {
+        // Same as for bandwidth, we start by estimating the RTT on several periods of time
+        const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
+        const rtts = ages.map((bw) => this.estimateRTTForAPeriod(bw));
+        
+        return Math.round(this.averageWithWeight(rtts));
+    }
+
+    // Estimates RTT for the last given number of minutes
+    estimateRTTForAPeriod(numberOfMinutes) {
+        
+        // Now, minus the number of minutes
+        const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
+
+        let pings = this.allTimings.filter(timing => {
+            return timing.responseEnd >= from;
+        }).map(timing => {
+            // The estimated RTT for one request is an average of: 
+            // DNS lookup time + First connection + SSL handshake + Time to First Byte
+            // in milliseconds.
+            //
+            // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
+            // So we use the resource's protocol
+            //
+            const dns = timing.domainLookupEnd - timing.domainLookupStart;
+            const tcp = timing.connectEnd - timing.connectStart;
+            const ttfb = timing.responseStart - timing.requestStart;
+
+            // If the given timing has a name, than it's for a resource, rather than the main HTML request:
+            const sslHandshake = +(timing.name ? (timing.name.indexOf('https:') === 0) : (protocol === 'https:'));
+            
+            // Let's consider that any timing under 10ms is not valuable 
+            const roundtripsCount = (dns > 10) + (tcp > 10) + sslHandshake + (ttfb > 10);
+
+            return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp + ttfb) / roundtripsCount);
+        });
+
+        // Let's use the 20th percentile here, to eliminate servers' slowness
+        return this.percentile(pings, .2);
+    }
+
     // Returns the value at a given percentile in a numeric array.
     // Not very accurate, but accurate enough for our needs.
     percentile(arr, p) {
@@ -390,6 +374,34 @@ class SpeedEstimator {
         newArray.sort((a, b) => a - b);
 
         return newArray[Math.floor(newArray.length * p)];
+    }
+
+    // Returns the average of the array, but gives much more weight to the first values
+    averageWithWeight(arr) {
+        let total = 0;
+        let totalWeights = 0;
+
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i] !== null) {
+
+                let weight = 1 / Math.pow(i + 1, 2);
+                // With that formula:
+                //  - the weight of the 1st minute is 1
+                //  - of the 10 first minutes is 1/4
+                //  - of the 100 is 1/9
+                //  - of the 1000 is 1/16
+                //  - of the 10000 is 1/25
+
+                total += arr[i] * weight;
+                totalWeights += weight;
+            }
+        }
+
+        if (totalWeights === 0) {
+            return null;
+        }
+
+        return total / totalWeights;
     }
 
     simplifyTimingObject(timing) {
@@ -441,8 +453,8 @@ class SpeedEstimator {
         // Not handling DB errors cause it's ok, we can still work without DB
     }
 
-    // Saves bandwidth to IndexedDB
-    saveBandwidth() {
+    // Saves bandwidth & RTT to IndexedDB
+    saveStats() {
         let object = {
             bandwidth: this.bandwidth,
             rtt: this.rtt,
@@ -456,8 +468,8 @@ class SpeedEstimator {
         }
     }
 
-    // Reads the latest known bandwidth from IndexedDB
-    retrieveBandwidth() {
+    // Reads the latest known bandwidth & RTT from IndexedDB
+    retrieveStats() {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
                 this.lastKnownBandwidth = event.target.result.bandwidth || null;

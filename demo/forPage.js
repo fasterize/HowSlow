@@ -86,6 +86,7 @@ class HowSlowForPage {
                 connectStart: window.performance.timing.connectStart,
                 connectEnd: window.performance.timing.connectEnd,
                 secureConnectionStart: window.performance.timing.secureConnectionStart,
+                requestStart: window.performance.timing.requestStart,
                 responseStart: window.performance.timing.responseStart,
                 responseEnd: window.performance.timing.responseEnd
             });
@@ -116,6 +117,7 @@ class HowSlowForPage {
             connectStart: Math.round(this.navigationStart + timing.connectStart),
             connectEnd: Math.round(this.navigationStart + timing.connectEnd),
             secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
+            requestStart: Math.round(this.navigationStart + timing.requestStart),
             responseStart: Math.round(this.navigationStart + timing.responseStart),
             responseEnd: Math.round(this.navigationStart + timing.responseEnd)
         };

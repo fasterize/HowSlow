@@ -270,28 +270,6 @@ class SpeedEstimator {
             });
         }
     }
-    
-    estimateRTT() {
-        let allPings = this.allTimings.map(timing => {
-            // The estimated RTT is an average of: DNS lookup time + First connection + SSL handshake
-            // in milliseconds.
-            //
-            // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
-            // So we use the resource's protocol
-            //
-            const dns = timing.domainLookupEnd - timing.domainLookupStart;
-            const tcp = timing.connectEnd - timing.connectStart;
-
-            // If the given timing has a name, than it's for a resource, rather than the main HTML request:
-            const sslHandshake = +(timing.name ? (timing.name.indexOf('https:') === 0) : (protocol === 'https:'));
-            
-            const roundtripsCount = (dns > 5) + (tcp > 5) + sslHandshake;
-            return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp) / roundtripsCount);
-        });
-
-        return this.percentile(allPings, .5);
-    }
-
 
     // Reads all given timings and estimate bandwidth
     estimateBandwidth() {
@@ -340,6 +318,32 @@ class SpeedEstimator {
         result = Math.min(result, this.getDownlinkMax());
 
         return Math.round(result);
+    }
+
+    // Reads all given timings and estimate bandwidth
+    estimateRTT() {
+        let allPings = this.allTimings.map(timing => {
+            // The estimated RTT is an average of: 
+            // DNS lookup time + First connection + SSL handshake + Time to First Byte
+            // in milliseconds.
+            //
+            // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
+            // So we use the resource's protocol
+            //
+            const dns = timing.domainLookupEnd - timing.domainLookupStart;
+            const tcp = timing.connectEnd - timing.connectStart;
+            const ttfb = timing.responseStart - timing.requestStart;
+
+            // If the given timing has a name, than it's for a resource, rather than the main HTML request:
+            const sslHandshake = +(timing.name ? (timing.name.indexOf('https:') === 0) : (protocol === 'https:'));
+            
+            // Let's consider that any timing under 10ms is not valuable 
+            const roundtripsCount = (dns > 10) + (tcp > 10) + sslHandshake + (ttfb > 10);
+            
+            return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp + ttfb) / roundtripsCount);
+        });
+
+        return this.percentile(allPings, .5);
     }
 
     // Estimate bandwidth for the last given number of minutes
@@ -397,6 +401,7 @@ class SpeedEstimator {
             connectStart: Math.round(this.epoch + timing.connectStart),
             connectEnd: Math.round(this.epoch + timing.connectEnd),
             secureConnectionStart: Math.round(this.epoch + timing.secureConnectionStart),
+            requestStart: Math.round(this.epoch + timing.requestStart),
             responseStart: Math.round(this.epoch + timing.responseStart),
             responseEnd: Math.round(this.epoch + timing.responseEnd)
         };

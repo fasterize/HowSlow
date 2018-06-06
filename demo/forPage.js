@@ -134,7 +134,7 @@ class HowSlowForPage {
                         this.bandwidth = event.target.result.bandwidth || null;
                         this.ttl = event.target.result.ttl || null;
                     };
-                } catch() {
+                } catch(error) {
                     // Silent error
                 }
             }, 1000);

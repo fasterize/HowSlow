@@ -446,7 +446,7 @@ class SpeedEstimator {
 
         try {
             this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
-        } catch() {
+        } catch(error) {
             // Silent error
         }
     }
@@ -459,7 +459,7 @@ class SpeedEstimator {
                 this.lastKnownTTL = event.target.result.ttl || null;
                 this.lastKnownConnectionType = event.target.result.connectionType;
             };
-        } catch() {
+        } catch(error) {
             // Silent error
         }
     }

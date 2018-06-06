@@ -63,8 +63,8 @@
         const bwDisplay = document.getElementById('bwDisplay');
         const ttlDisplay = document.getElementById('ttlDisplay');
         setInterval(function() {
-            bwDisplay.innerHTML = howslow.bandwidth;
-            ttlDisplay.innerHTML = howslow.ttl;
+            bwDisplay.innerHTML = howslow.bandwidth || 'unknown ';
+            ttlDisplay.innerHTML = howslow.ttl || 'unknown ';
         }, 500);
 
         // Autostop parameter

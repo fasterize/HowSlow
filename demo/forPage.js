@@ -43,9 +43,7 @@ class HowSlowForPage {
     // Geting ready to respond to Service Worker
     listenToSW() {
         window.navigator.serviceWorker.onmessage = (event) => {
-            if (event.data.command === 'timingsPlz') {
-                console.log('[HowSlow] The hungry SW wants more ResourceTimings');
-                
+            if (event.data.command === 'timingsPlz') {                
                 var timings = this.readLatestResourceTimings();
                 
                 if (timings.length > 0) {
@@ -62,9 +60,7 @@ class HowSlowForPage {
                 'command': 'eatThat',
                 'timings': simplifiedTimings
             });
-        } catch(error) {
-            console.error('[HowSlow] Can\'t respond to SW', error);
-        }
+        } catch(error) {}
     }
 
     // Gathers the ResourceTimings to send to the SW
@@ -133,10 +129,14 @@ class HowSlowForPage {
             let database = event.target.result;
             
             setInterval(() => {
-                database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                    this.bandwidth = event.target.result.bandwidth || null;
-                    this.ttl = event.target.result.ttl || null;
-                };
+                try {
+                    database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
+                        this.bandwidth = event.target.result.bandwidth || null;
+                        this.ttl = event.target.result.ttl || null;
+                    };
+                } catch() {
+                    // Silent error
+                }
             }, 1000);
         };
     }

@@ -444,18 +444,24 @@ class SpeedEstimator {
             connectionType: self.navigator.connection && self.navigator.connection.type
         };
 
-        if (this.database) {
+        try {
             this.database.transaction('bw', 'readwrite').objectStore('bw').put(object, 1);
+        } catch() {
+            // Silent error
         }
     }
 
     // Reads the latest known bandwidth from IndexedDB
     retrieveBandwidth() {
-        this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-            this.lastKnownBandwidth = event.target.result.bandwidth || null;
-            this.lastKnownTTL = event.target.result.ttl || null;
-            this.lastKnownConnectionType = event.target.result.connectionType;
-        };
+        try {
+            this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
+                this.lastKnownBandwidth = event.target.result.bandwidth || null;
+                this.lastKnownTTL = event.target.result.ttl || null;
+                this.lastKnownConnectionType = event.target.result.connectionType;
+            };
+        } catch() {
+            // Silent error
+        }
     }
 }
 

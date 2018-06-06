@@ -131,9 +131,9 @@ class SpeedEstimator {
         return null;
     }
 
-    getTTL() {
-        if (this.ttl) {
-            return this.ttl;
+    getRTT() {
+        if (this.rtt) {
+            return this.rtt;
         }
 
         // If we couldn't estimate bandwidth yet, but we've got a record in database
@@ -143,13 +143,13 @@ class SpeedEstimator {
             || !self.navigator.connection.type
             || this.lastKnownConnectionType === self.navigator.connection.type) {
 
-            return this.lastKnownTTL;
+            return this.lastKnownRTT;
         }
 
         return null;
     }
 
-    // Updates bandwidth & ttl
+    // Updates bandwidth & rtt
     refreshStats() {
         
         // Update the data from resource timings
@@ -157,7 +157,7 @@ class SpeedEstimator {
         
         // Use the data to estimate bandwidth
         this.bandwidth = this.estimateBandwidth();
-        this.ttl = this.estimateTTL();
+        this.rtt = this.estimateRTT();
         
         // If the bandwith was correctly estimated, we save it to database
         if (this.bandwidth) {
@@ -271,9 +271,9 @@ class SpeedEstimator {
         }
     }
     
-    estimateTTL() {
+    estimateRTT() {
         let allPings = this.allTimings.map(timing => {
-            // The estimated TTL is an average of: DNS lookup time + First connection + SSL handshake
+            // The estimated RTT is an average of: DNS lookup time + First connection + SSL handshake
             // in milliseconds.
             //
             // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
@@ -440,7 +440,7 @@ class SpeedEstimator {
     saveBandwidth() {
         let object = {
             bandwidth: this.bandwidth,
-            ttl: this.ttl,
+            rtt: this.rtt,
             connectionType: self.navigator.connection && self.navigator.connection.type
         };
 
@@ -456,7 +456,7 @@ class SpeedEstimator {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
                 this.lastKnownBandwidth = event.target.result.bandwidth || null;
-                this.lastKnownTTL = event.target.result.ttl || null;
+                this.lastKnownRTT = event.target.result.rtt || null;
                 this.lastKnownConnectionType = event.target.result.connectionType;
             };
         } catch(error) {

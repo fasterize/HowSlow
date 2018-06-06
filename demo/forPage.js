@@ -2,7 +2,7 @@ class HowSlowForPage {
     
     constructor(swPath) {
         this.bandwidth = null;
-        this.ttl = null;
+        this.rtt = null;
 
         this.initSW(swPath)
             .then(() => this.listenToSW())
@@ -121,7 +121,9 @@ class HowSlowForPage {
         };
     }
 
-    // Refresh bandwidth & TTL by reading from the IndexedDB every second
+    // Refresh bandwidth & RTT by reading from the IndexedDB every second.
+    // These stats are NOT available in "private navigation mode" on most browsers
+    // because browsers block IndexedDB.
     autoUpdateStats() {
         let dbPromise = self.indexedDB.open('howslow', 1)
         
@@ -132,7 +134,7 @@ class HowSlowForPage {
                 try {
                     database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
                         this.bandwidth = event.target.result.bandwidth || null;
-                        this.ttl = event.target.result.ttl || null;
+                        this.rtt = event.target.result.rtt || null;
                     };
                 } catch(error) {
                     // Silent error

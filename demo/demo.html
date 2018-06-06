@@ -17,6 +17,7 @@
 </head>
 <body>
     <p>This page reloads indefinitely the same image. But a Service Worker intercepts the requests and chooses what images it wants, based on a bandwidth estimation.</p>
+    <p>Estimated bandwidth: <b id="bwDisplay">unknown </b>KBps<br>Estimated TTL: <b id="ttlDisplay">unknown </b>ms</p>
 
     <button id="stopButton">Stop</button>
     <button id="restartButton" disabled="true">Restart</button>
@@ -57,6 +58,14 @@
             stopButton.disabled = false;
             restartButton.disabled = true;
         };
+
+        // Refresh bandwidth and ttl display
+        const bwDisplay = document.getElementById('bwDisplay');
+        const ttlDisplay = document.getElementById('ttlDisplay');
+        setInterval(function() {
+            bwDisplay.innerHTML = howslow.bandwidth;
+            ttlDisplay.innerHTML = howslow.ttl;
+        }, 500);
 
         // Autostop parameter
         // Default is 300 seconds to avoid crashing the internets

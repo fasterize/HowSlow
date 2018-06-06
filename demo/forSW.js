@@ -131,6 +131,24 @@ class SpeedEstimator {
         return null;
     }
 
+    getTTL() {
+        if (this.ttl) {
+            return this.ttl;
+        }
+
+        // If we couldn't estimate bandwidth yet, but we've got a record in database
+        // We serve the saved bandwidth
+        if (!this.lastKnownConnectionType
+            || !self.navigator.connection
+            || !self.navigator.connection.type
+            || this.lastKnownConnectionType === self.navigator.connection.type) {
+
+            return this.lastKnownTTL;
+        }
+
+        return null;
+    }
+
     // Updates bandwidth & ttl
     refreshStats() {
         
@@ -422,6 +440,7 @@ class SpeedEstimator {
     saveBandwidth() {
         let object = {
             bandwidth: this.bandwidth,
+            ttl: this.ttl,
             connectionType: self.navigator.connection && self.navigator.connection.type
         };
 
@@ -434,6 +453,7 @@ class SpeedEstimator {
     retrieveBandwidth() {
         this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
             this.lastKnownBandwidth = event.target.result.bandwidth || null;
+            this.lastKnownTTL = event.target.result.ttl || null;
             this.lastKnownConnectionType = event.target.result.connectionType;
         };
     }

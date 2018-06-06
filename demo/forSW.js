@@ -159,8 +159,8 @@ class SpeedEstimator {
         this.rtt = this.estimateRTT();
         
         // If the bandwith was correctly estimated, we save it to database
-        if (this.bandwidth) {
-            this.saveBandwidth();
+        if (this.bandwidth || this.rtt) {
+            this.saveStats();
         }
     }
 
@@ -303,6 +303,8 @@ class SpeedEstimator {
 
         // Sums up the transfered size in this duration
         const transferedSize = newArray.reduce((a, b) => a + b);
+        
+        // Skip estimating bandwidth if too few kilobytes were collected
         if (transferedSize < 102400) {
             return null;
         }
@@ -354,6 +356,11 @@ class SpeedEstimator {
 
             return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp + ttfb) / roundtripsCount);
         });
+
+        // Skip estimating RTT if too few requests were analyzed
+        if (pings.length < 3) {
+            return null;
+        }
 
         // Let's use the 20th percentile here, to eliminate servers' slowness
         return this.percentile(pings, .2);
@@ -447,7 +454,7 @@ class SpeedEstimator {
 
         dbPromise.onsuccess = (event) => {
             this.database = event.target.result;
-            this.retrieveBandwidth();
+            this.retrieveStats();
         };
 
         // Not handling DB errors cause it's ok, we can still work without DB

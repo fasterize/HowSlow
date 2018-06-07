@@ -40,7 +40,7 @@ class HowSlowForPage {
         });
     }
 
-    // Geting ready to respond to Service Worker
+    // Geting ready to receive messages from the Service Worker
     listenToSW() {
         window.navigator.serviceWorker.onmessage = (event) => {
             if (event.data.command === 'timingsPlz') {                
@@ -49,6 +49,9 @@ class HowSlowForPage {
                 if (timings.length > 0) {
                     this.sendResourceTimings(timings);
                 }
+            } else if (event.data.command === 'stats') {
+                this.bandwidth = event.data.bandwidth;
+                this.rtt = event.data.rtt;
             }
         };
     }
@@ -119,30 +122,6 @@ class HowSlowForPage {
             requestStart: Math.round(this.navigationStart + timing.requestStart),
             responseStart: Math.round(this.navigationStart + timing.responseStart),
             responseEnd: Math.round(this.navigationStart + timing.responseEnd)
-        };
-    }
-
-    // Refresh bandwidth & RTT by reading from the IndexedDB every second.
-    // These stats are NOT available in "private navigation mode" on most browsers
-    // because browsers block IndexedDB.
-    autoUpdateStats() {
-        let dbPromise = self.indexedDB.open('howslow', 1)
-        
-        dbPromise.onsuccess = (event) => {
-            let database = event.target.result;
-            
-            setInterval(() => {
-                try {
-                    database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                        if (event.target.result) {
-                            this.bandwidth = event.target.result.bandwidth || null;
-                            this.rtt = event.target.result.rtt || null;
-                        }
-                    };
-                } catch(error) {
-                    // Silent error
-                }
-            }, 1000);
         };
     }
 }

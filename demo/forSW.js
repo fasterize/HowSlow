@@ -114,12 +114,12 @@ class SpeedEstimator {
 
         // If we couldn't estimate bandwidth yet, but we've got a record in database
         // We serve the saved bandwidth
-        if (!this.lastKnownConnectionType
+        if (!this.connectionTypeFromDatabase
             || !self.navigator.connection
             || !self.navigator.connection.type
-            || this.lastKnownConnectionType === self.navigator.connection.type) {
+            || this.connectionTypeFromDatabase === self.navigator.connection.type) {
 
-            return this.lastKnownBandwidth;
+            return this.bandwidthFromDatabase;
         }
 
         return null;
@@ -132,12 +132,12 @@ class SpeedEstimator {
 
         // If we couldn't estimate bandwidth yet, but we've got a record in database
         // We serve the saved bandwidth
-        if (!this.lastKnownConnectionType
+        if (!this.connectionTypeFromDatabase
             || !self.navigator.connection
             || !self.navigator.connection.type
-            || this.lastKnownConnectionType === self.navigator.connection.type) {
+            || this.connectionTypeFromDatabase === self.navigator.connection.type) {
 
-            return this.lastKnownRTT;
+            return this.rttFromDatabase;
         }
 
         return null;
@@ -153,9 +153,11 @@ class SpeedEstimator {
         this.bandwidth = this.estimateBandwidth();
         this.rtt = this.estimateRTT();
         
-        // If the bandwith was correctly estimated, we save it to database
+        // If the bandwith or the RTT were correctly estimated,
+        // we save them to database and send them as a message to clients
         if (this.bandwidth || this.rtt) {
             this.saveStats();
+            this.sendStatsToClients();
         }
     }
 
@@ -166,7 +168,7 @@ class SpeedEstimator {
             // If the Service Worker doesn't have access to the Resource Timings API, 
             // we ask to each attached page (= client) its timings.
             // We won't be able to use them immediately, but they should be there on the next tick
-            this.askTimingToAllClients();
+            this.askTimingsToClients();
 
         } else {
             // The Service Worker has access to the Ressource Timings API,
@@ -187,13 +189,27 @@ class SpeedEstimator {
     }
 
     // Sends a request to all clients for their resource timings.
-    askTimingToAllClients() {
+    askTimingsToClients() {
+        this.sendMessageToAllClients({
+            command: 'timingsPlz'
+        });
+    }
+
+    // Send bandwidth and RTT to all clients
+    sendStatsToClients() {
+        this.sendMessageToAllClients({
+            command: 'stats',
+            bandwidth: this.bandwidth,
+            rtt: this.rtt
+        });
+    }
+
+    // Sends a message to all clients
+    sendMessageToAllClients(json) {
         self.clients.matchAll()
             .then((clients) => {
                 clients.forEach((client) => {
-                    client.postMessage({
-                        command: 'timingsPlz'
-                    });
+                    client.postMessage(json);
                 });
             });
     }
@@ -469,9 +485,9 @@ class SpeedEstimator {
     retrieveStats() {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                this.lastKnownBandwidth = event.target.result.bandwidth || null;
-                this.lastKnownRTT = event.target.result.rtt || null;
-                this.lastKnownConnectionType = event.target.result.connectionType;
+                this.bandwidthFromDatabase = event.target.result.bandwidth || null;
+                this.rttFromDatabase = event.target.result.rtt || null;
+                this.connectionTypeFromDatabase = event.target.result.connectionType;
             };
         } catch(error) {
             // Silent error

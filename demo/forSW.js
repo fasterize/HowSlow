@@ -341,20 +341,16 @@ class SpeedEstimator {
             // DNS lookup time + First connection + SSL handshake + Time to First Byte
             // in milliseconds.
             //
-            // Note: we can't rely on secureConnectionStart because IE doesn't provide it.
-            // So we use the resource's protocol
+            // Note: we can't rely on timing.secureConnectionStart because IE doesn't provide it.
+            // But we're always on HTTPS, so let's just count TCP connection as two roundtrips.
             //
             const dns = timing.domainLookupEnd - timing.domainLookupStart;
             const tcp = timing.connectEnd - timing.connectStart;
             const ttfb = timing.responseStart - timing.requestStart;
-
-            // If the given timing has a name, than it's for a resource, rather than the main HTML request:
-            const sslHandshake = +(timing.name ? (timing.name.indexOf('https:') === 0) : (protocol === 'https:'));
             
-            // Let's consider that any timing under 10ms is not valuable 
-            const roundtripsCount = (dns > 10) + (tcp > 10) + sslHandshake + (ttfb > 10);
-
-            return (roundtripsCount === sslHandshake) ? null : Math.round((dns + tcp + ttfb) / roundtripsCount);
+            // Let's consider that any timing under 10ms is not valuable
+            const roundtripsCount = (dns > 10) + ((tcp > 10) * 2) + (ttfb > 10);
+            return roundtripsCount ? Math.round((dns + tcp + ttfb) / roundtripsCount) : null;
         });
 
         // Skip estimating RTT if too few requests were analyzed

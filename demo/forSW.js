@@ -1,5 +1,3 @@
-/* ----- Adapt to your needs ----- */
-
 function myUrlRewritingFunction(url) {
     
     // This is some demo code. Adapt to your needs.
@@ -32,9 +30,8 @@ function myUrlRewritingFunction(url) {
     return null;
 }
 
-
-
-/* ----- No change below this line ----- */
+/* ----- Write your own service workers rules above this line ----- */
+/* ----- No change below this line -------------------------------- */
 
 // Service Worker initialization
 self.addEventListener('install', () => {

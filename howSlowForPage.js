@@ -1,12 +1,17 @@
 class HowSlowForPage {
     
     constructor(swPath) {
+        this.bandwidth = null;
+        this.rtt = null;
+
         this.initSW(swPath)
             .then(() => this.listenToSW())
             .catch((error) => console.log('[HowSlow]' + error));
 
         this.firstRequestSent = false;
         this.navigationStart = 0;
+
+        this.autoUpdateStats();
     }
 
     // Initializes the Service Worker, or at least tries
@@ -38,9 +43,7 @@ class HowSlowForPage {
     // Geting ready to respond to Service Worker
     listenToSW() {
         window.navigator.serviceWorker.onmessage = (event) => {
-            if (event.data.command === 'timingsPlz') {
-                console.log('[HowSlow] The hungry SW wants more ResourceTimings');
-                
+            if (event.data.command === 'timingsPlz') {                
                 var timings = this.readLatestResourceTimings();
                 
                 if (timings.length > 0) {
@@ -57,9 +60,7 @@ class HowSlowForPage {
                 'command': 'eatThat',
                 'timings': simplifiedTimings
             });
-        } catch(error) {
-            console.error('[HowSlow] Can\'t respond to SW', error);
-        }
+        } catch(error) {}
     }
 
     // Gathers the ResourceTimings to send to the SW
@@ -72,9 +73,23 @@ class HowSlowForPage {
         var timings = [];
 
         if (!this.firstRequestSent) {
+
+            // Save this for later
             this.navigationStart = window.performance.timing.navigationStart;
-            // The first HTML resource is as intersting as the others... and maybe more!
-            timings.push(this.simplifyTimingObject(window.performance.getEntriesByType('navigation')[0]));
+            
+            // The first HTML resource is as intersting as the others... maybe even more!
+            timings.push({
+                name: window.location.href,
+                transferSize: window.performance.timing.transferSize,
+                domainLookupStart: window.performance.timing.domainLookupStart,
+                domainLookupEnd: window.performance.timing.domainLookupEnd,
+                connectStart: window.performance.timing.connectStart,
+                connectEnd: window.performance.timing.connectEnd,
+                requestStart: window.performance.timing.requestStart,
+                responseStart: window.performance.timing.responseStart,
+                responseEnd: window.performance.timing.responseEnd
+            });
+
             this.firstRequestSent = true;
         }
 
@@ -85,6 +100,7 @@ class HowSlowForPage {
         // Now lets clear resourceTimings
         window.performance.clearResourceTimings();
         window.performance.setResourceTimingBufferSize(200);
+        
         // TODO: add an option to avoid clearing ResourceTimings...
         // ... some other scripts might need them!
 
@@ -100,8 +116,33 @@ class HowSlowForPage {
             connectStart: Math.round(this.navigationStart + timing.connectStart),
             connectEnd: Math.round(this.navigationStart + timing.connectEnd),
             secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
+            requestStart: Math.round(this.navigationStart + timing.requestStart),
             responseStart: Math.round(this.navigationStart + timing.responseStart),
             responseEnd: Math.round(this.navigationStart + timing.responseEnd)
+        };
+    }
+
+    // Refresh bandwidth & RTT by reading from the IndexedDB every second.
+    // These stats are NOT available in "private navigation mode" on most browsers
+    // because browsers block IndexedDB.
+    autoUpdateStats() {
+        let dbPromise = self.indexedDB.open('howslow', 1)
+        
+        dbPromise.onsuccess = (event) => {
+            let database = event.target.result;
+            
+            setInterval(() => {
+                try {
+                    database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
+                        if (event.target.result) {
+                            this.bandwidth = event.target.result.bandwidth || null;
+                            this.rtt = event.target.result.rtt || null;
+                        }
+                    };
+                } catch(error) {
+                    // Silent error
+                }
+            }, 1000);
         };
     }
 }

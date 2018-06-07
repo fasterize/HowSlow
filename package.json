@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "build-demo": "cat demo/myUrlRewritingFunction.js howSlowForSW.js > demo/forSW.js; cp howSlowForPage.js demo/forPage.js;"
   },
   "repository": {
     "type": "git",

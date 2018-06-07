@@ -62,6 +62,7 @@ class SpeedEstimator {
         // Start the ticker
         setInterval(() => {
             this.refreshStats();
+            this.sendStatsToClients();
         }, 1000);
 
         // Listen to the broadcast responses
@@ -127,7 +128,6 @@ class SpeedEstimator {
         // we save them to database and send them as a message to clients
         if (this.bandwidth || this.rtt) {
             this.saveStats();
-            this.sendStatsToClients();
         }
     }
 
@@ -169,8 +169,8 @@ class SpeedEstimator {
     sendStatsToClients() {
         this.sendMessageToAllClients({
             command: 'stats',
-            bandwidth: this.bandwidth,
-            rtt: this.rtt
+            bandwidth: this.getBandwidth(),
+            rtt: this.getRTT()
         });
     }
 

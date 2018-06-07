@@ -13,11 +13,15 @@
             0% {opacity: 0;}
             100% {opacity: 1;}
         }
+        .statsDisplay {
+            font-size: 1.5em;
+            margin: -10px 0 10px;
+        }
     </style>
 </head>
 <body>
     <p>This page reloads indefinitely the same image. But a Service Worker intercepts the requests and chooses what images it wants, based on a bandwidth estimation.</p>
-    <p>Estimated bandwidth: <b id="bwDisplay">unknown </b>KBps<br>Estimated RTT: <b id="rttDisplay">unknown </b>ms</p>
+    <p class="statsDisplay">Estimated bandwidth: <b id="bwDisplay">unknown </b>KBps<br>Estimated RTT: <b id="rttDisplay">unknown </b>ms</p>
 
     <button id="stopButton">Stop</button>
     <button id="restartButton" disabled="true">Restart</button>

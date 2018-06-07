@@ -332,7 +332,7 @@ class SpeedEstimator {
     estimateRTTForAPeriod(numberOfMinutes) {
         
         // Now, minus the number of minutes
-        const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
+        const from = Date.now() - (numberOfMinutes * 60 * 1000);
 
         let pings = this.allTimings.filter(timing => {
             return timing.responseEnd >= from;

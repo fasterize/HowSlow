@@ -273,8 +273,8 @@ class SpeedEstimator {
     // Reads timings and estimates bandwidth
     estimateBandwidth() {
         
-        // Let's estimate the bandwidth for some different periods of times (in minutes)
-        const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
+        // Let's estimate the bandwidth for some different periods of times (in seconds)
+        const ages = [20, 60, 300, 86400]; // 20s, 1m, 5m, 1d
         const bandwidths = ages.map((bw) => this.estimateBandwidthForAPeriod(bw));
         
         let result = this.averageWithWeight(bandwidths);
@@ -288,11 +288,11 @@ class SpeedEstimator {
         return Math.round(result);
     }
 
-    // Estimates bandwidth for the last given number of minutes
-    estimateBandwidthForAPeriod(numberOfMinutes) {
+    // Estimates bandwidth for the last given number of seconds
+    estimateBandwidthForAPeriod(numberOfSeconds) {
         
         // Now, minus the number of minutes
-        const from = Date.now() - this.epoch - (numberOfMinutes * 60 * 1000);
+        const from = Date.now() - this.epoch - (numberOfSeconds * 1000);
 
         // Retrieves corresponding cells in the timeline array
         const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);
@@ -322,17 +322,17 @@ class SpeedEstimator {
     // Reads timings and estimates Round Trip Time
     estimateRTT() {
         // Same as for bandwidth, we start by estimating the RTT on several periods of time
-        const ages = [1, 10, 100, 1000, 10000]; // 10000 minutes is approx one week
+        const ages = [20, 60, 300, 86400]; // 20s, 1m, 5m, 1d
         const rtts = ages.map((bw) => this.estimateRTTForAPeriod(bw));
         
         return Math.round(this.averageWithWeight(rtts));
     }
 
-    // Estimates RTT for the last given number of minutes
-    estimateRTTForAPeriod(numberOfMinutes) {
+    // Estimates RTT for the last given number of seconds
+    estimateRTTForAPeriod(numberOfSeconds) {
         
         // Now, minus the number of minutes
-        const from = Date.now() - (numberOfMinutes * 60 * 1000);
+        const from = Date.now() - (numberOfSeconds * 1000);
 
         let pings = this.allTimings.filter(timing => {
             return timing.responseEnd >= from;
@@ -387,13 +387,13 @@ class SpeedEstimator {
         for (var i = 0; i < arr.length; i++) {
             if (arr[i] !== null) {
 
-                let weight = 1 / Math.pow(i + 1, 2);
+                let weight = 1 / Math.pow(i + 1, 3);
                 // With that formula:
-                //  - the weight of the 1st minute is 1
-                //  - of the 10 first minutes is 1/4
-                //  - of the 100 is 1/9
-                //  - of the 1000 is 1/16
-                //  - of the 10000 is 1/25
+                //  - the weight of the 1st value is 1
+                //  - of the 2nd value is 1/8
+                //  - of the 3rd value is 1/27
+                //  - of the 4th value is 1/64
+                // ...
 
                 total += arr[i] * weight;
                 totalWeights += weight;
@@ -415,7 +415,6 @@ class SpeedEstimator {
             domainLookupEnd: Math.round(this.epoch + timing.domainLookupEnd),
             connectStart: Math.round(this.epoch + timing.connectStart),
             connectEnd: Math.round(this.epoch + timing.connectEnd),
-            secureConnectionStart: Math.round(this.epoch + timing.secureConnectionStart),
             requestStart: Math.round(this.epoch + timing.requestStart),
             responseStart: Math.round(this.epoch + timing.responseStart),
             responseEnd: Math.round(this.epoch + timing.responseEnd)

@@ -85,7 +85,6 @@ class HowSlowForPage {
                 domainLookupEnd: window.performance.timing.domainLookupEnd,
                 connectStart: window.performance.timing.connectStart,
                 connectEnd: window.performance.timing.connectEnd,
-                secureConnectionStart: window.performance.timing.secureConnectionStart,
                 requestStart: window.performance.timing.requestStart,
                 responseStart: window.performance.timing.responseStart,
                 responseEnd: window.performance.timing.responseEnd

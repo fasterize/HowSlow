@@ -3,7 +3,7 @@ function myUrlRewritingFunction(url) {
     // This is some demo code. Adapt to your needs.
 
     // Let's intercept every call to image.jpg
-    const regexp = /image\.jpg\?timestamp=(.*)$/;
+    const regexp = /images\/image\.jpg\?timestamp=(.*)$/;
     const execResult = regexp.exec(url);
 
     if (execResult !== null) {
@@ -12,17 +12,17 @@ function myUrlRewritingFunction(url) {
         var bandwidth = estimator.getBandwidth();
 
         if (bandwidth > 1000) {
-            return 'image-XL.jpg?timestamp=' + execResult[1];
+            return 'images/image-XL.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 300) {
-            return 'image-L.jpg?timestamp=' + execResult[1];
+            return 'images/image-L.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 100) {
-            return 'image-M.jpg?timestamp=' + execResult[1];
+            return 'images/image-M.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 30) {
-            return 'image-S.jpg?timestamp=' + execResult[1];
+            return 'images/image-S.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 10) {
-            return 'image-XS.jpg?timestamp=' + execResult[1];
+            return 'images/image-XS.jpg?timestamp=' + execResult[1];
         } else {
-            return 'image-unknown.jpg?timestamp=' + execResult[1];
+            return 'images/image-unknown.jpg?timestamp=' + execResult[1];
         }
     }
 

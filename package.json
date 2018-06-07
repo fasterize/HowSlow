@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "build-demo": "cat demo/myUrlRewritingFunction.js howSlowForSW.js > demo/forSW.js; cp howSlowForPage.js demo/forPage.js;"
+    "build-demo": "cat demo/myUrlRewritingFunction.js howSlowForSW.js > demo/forSW.js; babel howSlowForPage.js --out-file demo/forPage.js;"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,8 @@
   },
   "homepage": "https://github.com/gmetais/howslow#readme",
   "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-preset-es2015": "6.24.1",
     "mocha": "5.1.0"
   }
 }

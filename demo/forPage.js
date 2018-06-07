@@ -1,125 +1,155 @@
-class HowSlowForPage {
-    
-    constructor(swPath) {
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var HowSlowForPage = function () {
+    function HowSlowForPage(swPath) {
+        var _this = this;
+
+        _classCallCheck(this, HowSlowForPage);
+
         this.bandwidth = null;
         this.rtt = null;
 
-        this.initSW(swPath)
-            .then(() => this.listenToSW())
-            .catch((error) => console.log('[HowSlow]' + error));
+        this.initSW(swPath).then(function () {
+            return _this.listenToSW();
+        }).catch(function (error) {
+            return console.log('[HowSlow]' + error);
+        });
 
         this.firstRequestSent = false;
         this.navigationStart = 0;
     }
 
     // Initializes the Service Worker, or at least tries
-    initSW(swPath) {
-        return new Promise((resolve, reject) => {
-            if (!('serviceWorker' in window.navigator)) {
-                // No browser support
-                reject('Service Workers not supported');
-            }
 
-            if (window.navigator.serviceWorker.controller) {
-                if (window.navigator.serviceWorker.controller.scriptURL.indexOf(swPath) >= 0) {
-                    // The service worker is already active
-                    resolve();
-                } else {
-                    reject('Giving up. Service Worker conflict with: ' + window.navigator.serviceWorker.controller.scriptURL);
+
+    _createClass(HowSlowForPage, [{
+        key: 'initSW',
+        value: function initSW(swPath) {
+            return new Promise(function (resolve, reject) {
+                if (!('serviceWorker' in window.navigator)) {
+                    // No browser support
+                    reject('Service Workers not supported');
                 }
-            } else {
-                window.navigator.serviceWorker.register(swPath)
-                    .then(window.navigator.serviceWorker.ready)
-                    .then(function(serviceWorkerRegistration) {
+
+                if (window.navigator.serviceWorker.controller) {
+                    if (window.navigator.serviceWorker.controller.scriptURL.indexOf(swPath) >= 0) {
+                        // The service worker is already active
+                        resolve();
+                    } else {
+                        reject('Giving up. Service Worker conflict with: ' + window.navigator.serviceWorker.controller.scriptURL);
+                    }
+                } else {
+                    window.navigator.serviceWorker.register(swPath).then(window.navigator.serviceWorker.ready).then(function (serviceWorkerRegistration) {
                         // The service worker is registered and should even be ready now
                         resolve();
-                });
-            }
-        });
-    }
-
-    // Geting ready to receive messages from the Service Worker
-    listenToSW() {
-        window.navigator.serviceWorker.onmessage = (event) => {
-            if (event.data.command === 'timingsPlz') {                
-                var timings = this.readLatestResourceTimings();
-                
-                if (timings.length > 0) {
-                    this.sendResourceTimings(timings);
+                    });
                 }
-            } else if (event.data.command === 'stats') {
-                this.bandwidth = event.data.bandwidth;
-                this.rtt = event.data.rtt;
+            });
+        }
+
+        // Geting ready to receive messages from the Service Worker
+
+    }, {
+        key: 'listenToSW',
+        value: function listenToSW() {
+            var _this2 = this;
+
+            window.navigator.serviceWorker.onmessage = function (event) {
+                if (event.data.command === 'timingsPlz') {
+                    var timings = _this2.readLatestResourceTimings();
+
+                    if (timings.length > 0) {
+                        _this2.sendResourceTimings(timings);
+                    }
+                } else if (event.data.command === 'stats') {
+                    _this2.bandwidth = event.data.bandwidth;
+                    _this2.rtt = event.data.rtt;
+                }
+            };
+        }
+
+        // Gathers the latest ResourceTimings and sends them to SW
+
+    }, {
+        key: 'sendResourceTimings',
+        value: function sendResourceTimings(simplifiedTimings) {
+            try {
+                navigator.serviceWorker.controller.postMessage({
+                    'command': 'eatThat',
+                    'timings': simplifiedTimings
+                });
+            } catch (error) {}
+        }
+
+        // Gathers the ResourceTimings to send to the SW
+
+    }, {
+        key: 'readLatestResourceTimings',
+        value: function readLatestResourceTimings() {
+            var _this3 = this;
+
+            // Not compatible browsers
+            if (!window.performance || !window.performance.getEntriesByType || !window.performance.timing) {
+                return [];
             }
-        };
-    }
 
-    // Gathers the latest ResourceTimings and sends them to SW
-    sendResourceTimings(simplifiedTimings) {
-        try {
-            navigator.serviceWorker.controller.postMessage({
-                'command': 'eatThat',
-                'timings': simplifiedTimings
-            });
-        } catch(error) {}
-    }
+            var timings = [];
 
-    // Gathers the ResourceTimings to send to the SW
-    readLatestResourceTimings() {
-        // Not compatible browsers
-        if (!window.performance || !window.performance.getEntriesByType || !window.performance.timing) {
-            return [];
-        }
+            if (!this.firstRequestSent) {
 
-        var timings = [];
+                // Save this for later
+                this.navigationStart = window.performance.timing.navigationStart;
 
-        if (!this.firstRequestSent) {
+                // The first HTML resource is as intersting as the others... maybe even more!
+                timings.push({
+                    name: window.location.href,
+                    transferSize: window.performance.timing.transferSize,
+                    domainLookupStart: window.performance.timing.domainLookupStart,
+                    domainLookupEnd: window.performance.timing.domainLookupEnd,
+                    connectStart: window.performance.timing.connectStart,
+                    connectEnd: window.performance.timing.connectEnd,
+                    requestStart: window.performance.timing.requestStart,
+                    responseStart: window.performance.timing.responseStart,
+                    responseEnd: window.performance.timing.responseEnd
+                });
 
-            // Save this for later
-            this.navigationStart = window.performance.timing.navigationStart;
-            
-            // The first HTML resource is as intersting as the others... maybe even more!
-            timings.push({
-                name: window.location.href,
-                transferSize: window.performance.timing.transferSize,
-                domainLookupStart: window.performance.timing.domainLookupStart,
-                domainLookupEnd: window.performance.timing.domainLookupEnd,
-                connectStart: window.performance.timing.connectStart,
-                connectEnd: window.performance.timing.connectEnd,
-                requestStart: window.performance.timing.requestStart,
-                responseStart: window.performance.timing.responseStart,
-                responseEnd: window.performance.timing.responseEnd
+                this.firstRequestSent = true;
+            }
+
+            window.performance.getEntriesByType('resource').forEach(function (timing) {
+                timings.push(_this3.simplifyTimingObject(timing));
             });
 
-            this.firstRequestSent = true;
+            // Now lets clear resourceTimings
+            window.performance.clearResourceTimings();
+            window.performance.setResourceTimingBufferSize(200);
+
+            // TODO: add an option to avoid clearing ResourceTimings...
+            // ... some other scripts might need them!
+
+            return timings;
         }
+    }, {
+        key: 'simplifyTimingObject',
+        value: function simplifyTimingObject(timing) {
+            return {
+                name: timing.name,
+                transferSize: timing.transferSize,
+                domainLookupStart: Math.round(this.navigationStart + timing.domainLookupStart),
+                domainLookupEnd: Math.round(this.navigationStart + timing.domainLookupEnd),
+                connectStart: Math.round(this.navigationStart + timing.connectStart),
+                connectEnd: Math.round(this.navigationStart + timing.connectEnd),
+                secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
+                requestStart: Math.round(this.navigationStart + timing.requestStart),
+                responseStart: Math.round(this.navigationStart + timing.responseStart),
+                responseEnd: Math.round(this.navigationStart + timing.responseEnd)
+            };
+        }
+    }]);
 
-        window.performance.getEntriesByType('resource').forEach((timing) => {
-            timings.push(this.simplifyTimingObject(timing));
-        });
-
-        // Now lets clear resourceTimings
-        window.performance.clearResourceTimings();
-        window.performance.setResourceTimingBufferSize(200);
-        
-        // TODO: add an option to avoid clearing ResourceTimings...
-        // ... some other scripts might need them!
-
-        return timings;
-    }
-
-    simplifyTimingObject(timing) {
-        return {
-            name: timing.name,
-            transferSize: timing.transferSize,
-            domainLookupStart: Math.round(this.navigationStart + timing.domainLookupStart),
-            domainLookupEnd: Math.round(this.navigationStart + timing.domainLookupEnd),
-            connectStart: Math.round(this.navigationStart + timing.connectStart),
-            connectEnd: Math.round(this.navigationStart + timing.connectEnd),
-            secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
-            requestStart: Math.round(this.navigationStart + timing.requestStart),
-            responseStart: Math.round(this.navigationStart + timing.responseStart),
-            responseEnd: Math.round(this.navigationStart + timing.responseEnd)
-        };
-    }
-}
+    return HowSlowForPage;
+}();

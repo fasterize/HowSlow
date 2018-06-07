@@ -10,8 +10,6 @@ class HowSlowForPage {
 
         this.firstRequestSent = false;
         this.navigationStart = 0;
-
-        this.autoUpdateStats();
     }
 
     // Initializes the Service Worker, or at least tries

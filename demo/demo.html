@@ -34,7 +34,7 @@
             if (!stopped) {
                 var image = document.createElement('img');
                 image.src = 'image.jpg?timestamp=' + Date.now();
-                image.onload = function() {
+                image.onload = image.onerror = function() {
                     setTimeout(loadNewImage, DELAY);
                 };
                 container.insertBefore(image, container.firstChild);

@@ -135,8 +135,10 @@ class HowSlowForPage {
             setInterval(() => {
                 try {
                     database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                        this.bandwidth = event.target.result.bandwidth || null;
-                        this.rtt = event.target.result.rtt || null;
+                        if (event.target.result) {
+                            this.bandwidth = event.target.result.bandwidth || null;
+                            this.rtt = event.target.result.rtt || null;
+                        }
                     };
                 } catch(error) {
                     // Silent error

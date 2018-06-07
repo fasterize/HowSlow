@@ -13,9 +13,7 @@ function myUrlRewritingFunction(url) {
         // ... and choose the right image!
         var bandwidth = estimator.getBandwidth();
 
-        if (bandwidth > 3000) {
-            return 'image-XXL.jpg?timestamp=' + execResult[1];
-        } else if (bandwidth > 1000) {
+        if (bandwidth > 1000) {
             return 'image-XL.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 300) {
             return 'image-L.jpg?timestamp=' + execResult[1];

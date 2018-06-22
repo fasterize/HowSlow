@@ -108,5 +108,5 @@ However, Service Workers are quite unpredictable and you should not rely on this
 
 ## Authors
 
-The Fasterize team. [Fasterize](https://www.fasterize.com/fr/) is an automatic frontend optimization platform. 
+The Fasterize team. [Fasterize](https://www.fasterize.com) is an automatic frontend optimization platform. 
 

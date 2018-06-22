@@ -24,9 +24,69 @@ But you can also think the other way 🔃 and enhance your website quality on hi
 
 ## How to install?
 
-### Step 1: 
+TODO: make it available as an NPM package
 
+### Step 1: Load howSlowForPage.js and instantiate it
 
+Grab the howSlowForPage.js script, transpile it to ES5 (because it's written in ES6), and load it on the page whenever you want. But the sooner it's loaded, the sooner the service worker will be ready.
+
+And just after it's loaded, you need to instantiate it with the path to the service worker.
+
+```html
+<script src="/scripts/howSlowForPage.js"></script>
+<script>window.howslow = new HowSlowForPage('forSW.js');</script>
+```
+
+### Step 2: Build the service worker and serve it at the root level
+
+Grab the howSlowForSW.js script and add your custom `myUrlRewritingFunction` function at the top. If you do not want your service worker to change any URL, just write a function that returns null:
+
+```js
+function myUrlRewritingFunction() {
+    return null;
+}
+```
+
+Note: You don't need to transpile the service worker's code, as all Service Workers compatible browsers can understand ES6. 
+
+### Step 3: Use the estimated bandwidth or RTT
+
+If you need the stats in the page's scope, they're available like this:
+
+```js
+if (howslow.bandwidth > 1000) { // Remember, bandwidth is in KBps (1 Kilo Bytes = 8 Kilo bits)
+    videoPlayer.init();
+}
+
+if (howslow.rtt < 50) { // Roundtrip Time is in milliseconds
+    loadThirdParties();
+}
+```
+
+If you need them in the Service Worker's scope, they're here:
+
+```js
+estimator.getBandwidth();
+estimator.getRTT();
+```
+
+And here is an exemple using `myUrlRewritingFunction`:
+```js
+function myUrlRewritingFunction(url) {
+    
+    // Let's intercept every editorial image call
+    const regexp = /images\/editorial\/(.*)\.jpg$/;
+    const execResult = regexp.exec(url);
+
+    if (execResult !== null && estimator.getBandwidth() > 1000) {
+        // Add an "-hd" suffix to the image name
+        return '/images/editorial/' + execResult[1] + '-hd.jpg';
+    }
+
+    // Respond null for the default behavior
+    return null;
+}
+```
 
 
 ## Will it work on the first page load?

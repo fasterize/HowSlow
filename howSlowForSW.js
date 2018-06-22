@@ -28,16 +28,14 @@ self.addEventListener('fetch', (event) => {
     let options = {};
 
     if (modifiedUrl) {
-        // Add credentials to the request, otherwise fetch opens a new connection
+        // Add credentials to the request otherwise the fetch method opens a new connection
         options.credentials = 'include';
     }
 
     event.respondWith(
         fetch((modifiedUrl || event.request), options)
             .then(function(response) {
-                // Saves the new url for later use
-                estimator.addUrlRewriting(event.request.url, response.url);
-                // As well as the content-length header
+                // Save the content-length header
                 estimator.addContentLength(response.url, response);
                 return response;
             })
@@ -49,7 +47,6 @@ class SpeedEstimator {
     
     constructor() {
         this.allTimings = [];
-        this.allUrlRewritings = {};
         this.allContentLengths = [];
         this.allIntervals = [];
         this.INTERVAL_DURATION = 25; // in milliseconds
@@ -185,10 +182,6 @@ class SpeedEstimator {
     // only if it doesn't look like it comes from the browser's cache
     addOneTiming(timing) {
 
-        // As the Service Worker is able to change the url of a request,
-        // let's use the new url.
-        timing.name = this.findNewUrl(timing.name);
-
         // If we don't have the transfer size (Safari & Edge don't provide it)
         // than let's try to read it from the Content-Length headers.
         if (!timing.transferSize) {
@@ -225,17 +218,6 @@ class SpeedEstimator {
                 return parseInt(this.allContentLengths[i].size, 10);
             }
         }
-    }
-
-    // And what a good idea we had to also save the urls that were modified by the service worker!
-    // Because we need one.
-    findNewUrl(originalUrl) {
-        return this.allUrlRewritings[originalUrl] || originalUrl;
-    }
-
-    // Saves url rewritings in a list for later use
-    addUrlRewriting(originalUrl, newUrl) {
-        this.allUrlRewritings[originalUrl] = newUrl;
     }
 
     // Saves the content-length data from a fetched response header

@@ -443,7 +443,7 @@ class SpeedEstimator {
     retrieveStats() {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                if (event.target) {
+                if (event.target.result) {
                     this.bandwidthFromDatabase = event.target.result.bandwidth || null;
                     this.rttFromDatabase = event.target.result.rtt || null;
                     this.connectionTypeFromDatabase = event.target.result.connectionType;

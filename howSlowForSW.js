@@ -24,7 +24,7 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let modifiedUrl = myUrlRewritingFunction(event.request.url);
+    let modifiedUrl = (typeof myUrlRewritingFunction === 'functon') ? myUrlRewritingFunction(event.request.url) : null;
     let options = {};
 
     if (modifiedUrl) {

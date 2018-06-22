@@ -34,22 +34,14 @@ And just after it's loaded, you need to instantiate it with the path to the serv
 
 ```html
 <script src="/scripts/howSlowForPage.js"></script>
-<script>window.howslow = new HowSlowForPage('forSW.js');</script>
+<script>window.howslow = new HowSlowForPage('/mySW.js');</script>
 ```
 
 ### Step 2: Build the service worker and serve it at the root level
 
-Grab the howSlowForSW.js script and add your custom `myUrlRewritingFunction` function at the top. If you do not want your service worker to change any URL, just write a function that returns null:
+Grab the howSlowForSW.js script, rename it as you like (`mySW.js` in the above example) and serve it with at your website's root. You don't need to transpile the service worker's code, as Service Workers compatible browsers understand ES6.
 
-```js
-function myUrlRewritingFunction() {
-    return null;
-}
-```
-
-Note: You don't need to transpile the service worker's code, as all Service Workers compatible browsers can understand ES6. 
-
-### Step 3: Use the estimated bandwidth or RTT
+### Step 3: Use the estimated bandwidth or RTT in your code
 
 If you need the stats in the page's scope, they're available like this:
 
@@ -63,14 +55,17 @@ if (howslow.rtt < 50) { // Roundtrip Time is in milliseconds
 }
 ```
 
-If you need them in the Service Worker's scope, they're here:
+If you need them in the Service Worker's scope, here they are:
 
 ```js
-estimator.getBandwidth();
-estimator.getRTT();
+estimator.getBandwidth()
+estimator.getRTT()
 ```
 
-And here is an exemple using `myUrlRewritingFunction`:
+You can write your own logic at the top of the current script. What you can't do is write a fetch event listener as there can be only one. You can still use a hook function called  `myUrlRewritingFunction`.
+
+Here is an example that adds an `-hd` suffix to images on fast connections:
+
 ```js
 function myUrlRewritingFunction(url) {
     
@@ -86,6 +81,16 @@ function myUrlRewritingFunction(url) {
     // Respond null for the default behavior
     return null;
 }
+
+// ... and here is the rest of the howSlowForSW.js script
+```
+
+If you want to keep your logic separated from howslow, you can use the importScripts() method. But that's one more request before the Service Workers is available.
+
+```js
+self.importScripts('howSlowForSW.js');
+
+// ... and here is your own code
 ```
 
 

@@ -46,7 +46,7 @@ self.addEventListener('activate', () => {
 
             // The attached pages might already have some resource timings available.
             // Let's ask!
-            estimator.askTimingToAllClients();
+            estimator.askTimingsToClients();
         });
     }
 });
@@ -92,6 +92,7 @@ class SpeedEstimator {
         // Start the ticker
         setInterval(() => {
             this.refreshStats();
+            this.sendStatsToClients();
         }, 1000);
 
         // Listen to the broadcast responses
@@ -157,21 +158,14 @@ class SpeedEstimator {
         // we save them to database and send them as a message to clients
         if (this.bandwidth || this.rtt) {
             this.saveStats();
-            this.sendStatsToClients();
         }
     }
 
     // Collects the latest resource timings
     refreshTimings() {
 
-        if (this.shouldAskTimingsToPage()) {
-            // If the Service Worker doesn't have access to the Resource Timings API, 
-            // we ask to each attached page (= client) its timings.
-            // We won't be able to use them immediately, but they should be there on the next tick
-            this.askTimingsToClients();
-
-        } else {
-            // The Service Worker has access to the Ressource Timings API,
+        if (self.performance && self.performance.getEntriesByType) {
+            // If the Service Worker has access to the Resource Timing API,
             // It's easy, we just read it.
 
             self.performance.getEntriesByType('resource').forEach((timing) => {
@@ -186,6 +180,9 @@ class SpeedEstimator {
             //  performance data buffer, use the Performance.setResourceTimingBufferSize() method."
             self.performance.setResourceTimingBufferSize(200);
         }
+
+        // TODO : the "else" part, when the Service Workers doesn't have access to
+        // the Resource Timing API (Microsoft Edge)
     }
 
     // Sends a request to all clients for their resource timings.
@@ -199,8 +196,8 @@ class SpeedEstimator {
     sendStatsToClients() {
         this.sendMessageToAllClients({
             command: 'stats',
-            bandwidth: this.bandwidth,
-            rtt: this.rtt
+            bandwidth: this.getBandwidth(),
+            rtt: this.getRTT()
         });
     }
 
@@ -316,7 +313,7 @@ class SpeedEstimator {
         const transferedSize = newArray.reduce((a, b) => a + b);
         
         // Skip estimating bandwidth if too few kilobytes were collected
-        if (transferedSize < 102400) {
+        if (transferedSize < 51200) {
             return null;
         }
 
@@ -432,15 +429,6 @@ class SpeedEstimator {
         };
     }
 
-    // Returns false if the SW has access to the Resource Timings API
-    // Returns true if we need to ask the page for the resource list
-    shouldAskTimingsToPage() {
-        
-        // TODO: replace User Agent detection with true detection
-
-        return /Edge/.test(self.navigator.userAgent);
-    }
-
     getDownlinkMax() {
         if (self.navigator.connection && self.navigator.connection.downlinkMax > 0) {
             return self.navigator.connection.downlinkMax * 256; // convert Mbps to KBps
@@ -485,9 +473,11 @@ class SpeedEstimator {
     retrieveStats() {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                this.bandwidthFromDatabase = event.target.result.bandwidth || null;
-                this.rttFromDatabase = event.target.result.rtt || null;
-                this.connectionTypeFromDatabase = event.target.result.connectionType;
+                if (event.target) {
+                    this.bandwidthFromDatabase = event.target.result.bandwidth || null;
+                    this.rttFromDatabase = event.target.result.rtt || null;
+                    this.connectionTypeFromDatabase = event.target.result.connectionType;
+                }
             };
         } catch(error) {
             // Silent error

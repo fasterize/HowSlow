@@ -60,12 +60,14 @@ var HowSlowForPage = function () {
 
             window.navigator.serviceWorker.onmessage = function (event) {
                 if (event.data.command === 'timingsPlz') {
+                    // The Service Workers asks for resource timings
                     var timings = _this2.readLatestResourceTimings();
 
                     if (timings.length > 0) {
                         _this2.sendResourceTimings(timings);
                     }
                 } else if (event.data.command === 'stats') {
+                    // The Service Workers sends the latest stats
                     _this2.bandwidth = event.data.bandwidth;
                     _this2.rtt = event.data.rtt;
                 }
@@ -85,7 +87,7 @@ var HowSlowForPage = function () {
             } catch (error) {}
         }
 
-        // Gathers the ResourceTimings to send to the SW
+        // Gathers the ResourceTimings from the API
 
     }, {
         key: 'readLatestResourceTimings',
@@ -121,7 +123,18 @@ var HowSlowForPage = function () {
             }
 
             window.performance.getEntriesByType('resource').forEach(function (timing) {
-                timings.push(_this3.simplifyTimingObject(timing));
+                timings.push({
+                    name: timing.name,
+                    transferSize: timing.transferSize,
+                    domainLookupStart: Math.round(_this3.navigationStart + timing.domainLookupStart),
+                    domainLookupEnd: Math.round(_this3.navigationStart + timing.domainLookupEnd),
+                    connectStart: Math.round(_this3.navigationStart + timing.connectStart),
+                    connectEnd: Math.round(_this3.navigationStart + timing.connectEnd),
+                    secureConnectionStart: Math.round(_this3.navigationStart + timing.secureConnectionStart),
+                    requestStart: Math.round(_this3.navigationStart + timing.requestStart),
+                    responseStart: Math.round(_this3.navigationStart + timing.responseStart),
+                    responseEnd: Math.round(_this3.navigationStart + timing.responseEnd)
+                });
             });
 
             // Now lets clear resourceTimings
@@ -132,22 +145,6 @@ var HowSlowForPage = function () {
             // ... some other scripts might need them!
 
             return timings;
-        }
-    }, {
-        key: 'simplifyTimingObject',
-        value: function simplifyTimingObject(timing) {
-            return {
-                name: timing.name,
-                transferSize: timing.transferSize,
-                domainLookupStart: Math.round(this.navigationStart + timing.domainLookupStart),
-                domainLookupEnd: Math.round(this.navigationStart + timing.domainLookupEnd),
-                connectStart: Math.round(this.navigationStart + timing.connectStart),
-                connectEnd: Math.round(this.navigationStart + timing.connectEnd),
-                secureConnectionStart: Math.round(this.navigationStart + timing.secureConnectionStart),
-                requestStart: Math.round(this.navigationStart + timing.requestStart),
-                responseStart: Math.round(this.navigationStart + timing.responseStart),
-                responseEnd: Math.round(this.navigationStart + timing.responseEnd)
-            };
         }
     }]);
 

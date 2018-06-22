@@ -93,7 +93,7 @@ class SpeedEstimator {
             return this.bandwidthFromDatabase;
         }
 
-        return null;
+        return undefined;
     }
 
     getRTT() {
@@ -111,7 +111,7 @@ class SpeedEstimator {
             return this.rttFromDatabase;
         }
 
-        return null;
+        return undefined;
     }
 
     // Updates bandwidth & rtt
@@ -186,7 +186,7 @@ class SpeedEstimator {
     addOneTiming(timing) {
 
         // As the Service Worker is able to change the url of a request,
-        // we let's use the new url.
+        // let's use the new url.
         timing.name = this.findNewUrl(timing.name);
 
         // If we don't have the transfer size (Safari & Edge don't provide it)
@@ -276,7 +276,7 @@ class SpeedEstimator {
         const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);
         
         if (newArray.length === 0) {
-            return null;
+            return undefined;
         }
 
         // Sums up the transfered size in this duration
@@ -284,7 +284,7 @@ class SpeedEstimator {
         
         // Skip estimating bandwidth if too few kilobytes were collected
         if (transferedSize < 51200) {
-            return null;
+            return undefined;
         }
 
         // Now let's use the 90th percentile of all values
@@ -333,7 +333,7 @@ class SpeedEstimator {
 
         // Skip estimating RTT if too few requests were analyzed
         if (pings.length < 3) {
-            return null;
+            return undefined;
         }
 
         // Let's use the 20th percentile here, to eliminate servers' slowness
@@ -344,12 +344,12 @@ class SpeedEstimator {
     // Not very accurate, but accurate enough for our needs.
     percentile(arr, p) {
 
-        // Remove nulls and transfer to a new array
-        let newArray = arr.filter((cell) => cell !== null);
+        // Remove undefineds and transfer to a new array
+        let newArray = arr.filter((cell) => cell !== undefined);
 
         // Fail if there are no results
         if (newArray.length === 0) {
-            return null;
+            return undefined;
         }
 
         newArray.sort((a, b) => a - b);
@@ -363,7 +363,7 @@ class SpeedEstimator {
         let totalWeights = 0;
 
         for (var i = 0; i < arr.length; i++) {
-            if (arr[i] !== null) {
+            if (arr[i] !== undefined) {
 
                 let weight = 1 / Math.pow(i + 1, 3);
                 // With that formula:
@@ -379,7 +379,7 @@ class SpeedEstimator {
         }
 
         if (totalWeights === 0) {
-            return null;
+            return undefined;
         }
 
         return total / totalWeights;
@@ -444,8 +444,8 @@ class SpeedEstimator {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
                 if (event.target.result) {
-                    this.bandwidthFromDatabase = event.target.result.bandwidth || null;
-                    this.rttFromDatabase = event.target.result.rtt || null;
+                    this.bandwidthFromDatabase = event.target.result.bandwidth || undefined;
+                    this.rttFromDatabase = event.target.result.rtt || undefined;
                     this.connectionTypeFromDatabase = event.target.result.connectionType;
                 }
             };

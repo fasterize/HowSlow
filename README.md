@@ -24,7 +24,7 @@ But you can also think the other way 🔃 and enhance your website quality on hi
 
 ## How to install?
 
-TODO: make it available as an NPM package
+*TODO: make it available as an NPM package*
 
 ### Step 1: Load howSlowForPage.js and instantiate it
 

@@ -55,7 +55,7 @@ if (howslow.getRTT() < 50) { // Roundtrip Time is in milliseconds
 }
 ```
 
-If you need them in the Service Worker's scope, here they are:
+If you need them in the Service Worker's scope, they are available in the same way:
 
 ```js
 howslow.getBandwidth()

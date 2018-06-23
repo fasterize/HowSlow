@@ -1,7 +1,7 @@
 
 
-/* ----- Write your own service workers rules above this line ----- */
-/* ----- No change below this line -------------------------------- */
+/* ----- ↑ Write your own service workers rules above this line ↑ ----- */
+/* ----- ↓ Change below this line at your own risks ↓ -------------------------------- */
 
 // Service Worker initialization
 self.addEventListener('install', () => {
@@ -24,7 +24,7 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let modifiedUrl = (typeof myUrlRewritingFunction === 'functon') ? myUrlRewritingFunction(event.request.url) : null;
+    let modifiedUrl = (typeof urlRewritingHook === 'functon') ? urlRewritingHook(event.request.url) : null;
     let options = {};
 
     if (modifiedUrl) {

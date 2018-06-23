@@ -62,12 +62,12 @@ estimator.getBandwidth()
 estimator.getRTT()
 ```
 
-You can write your own logic at the top of the current script. What you can't do is write a fetch event listener as there can be only one. You can still use a hook function called  `myUrlRewritingFunction`.
+You can write your own logic at the top of the current script. What you can't do is write a fetch event listener as there can be only one. You can still use a hook function called  `urlRewritingHook`.
 
 Here is an example that adds an `-hd` suffix to images on fast connections:
 
 ```js
-function myUrlRewritingFunction(url) {
+function urlRewritingHook(url) {
     
     // Let's intercept every editorial image call
     const regexp = /images\/editorial\/(.*)\.jpg$/;

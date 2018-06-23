@@ -1,4 +1,4 @@
-function myUrlRewritingFunction(url) {
+function urlRewritingHook(url) {
     
     // This is some demo code. Adapt to your needs.
 

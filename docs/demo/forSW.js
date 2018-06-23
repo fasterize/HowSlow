@@ -1,4 +1,4 @@
-function myUrlRewritingFunction(url) {
+function urlRewritingHook(url) {
     
     // This is some demo code. Adapt to your needs.
 
@@ -30,8 +30,8 @@ function myUrlRewritingFunction(url) {
     return null;
 }
 
-/* ----- Write your own service workers rules above this line ----- */
-/* ----- No change below this line -------------------------------- */
+/* ----- ↑ Write your own service workers rules above this line ↑ ----- */
+/* ----- ↓ Change below this line at your own risks ↓ -------------------------------- */
 
 // Service Worker initialization
 self.addEventListener('install', () => {
@@ -54,20 +54,18 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let modifiedUrl = myUrlRewritingFunction(event.request.url);
+    let modifiedUrl = (typeof urlRewritingHook === 'functon') ? urlRewritingHook(event.request.url) : null;
     let options = {};
 
     if (modifiedUrl) {
-        // Add credentials to the request, otherwise fetch opens a new connection
+        // Add credentials to the request otherwise the fetch method opens a new connection
         options.credentials = 'include';
     }
 
     event.respondWith(
         fetch((modifiedUrl || event.request), options)
             .then(function(response) {
-                // Saves the new url for later use
-                estimator.addUrlRewriting(event.request.url, response.url);
-                // As well as the content-length header
+                // Save the content-length header
                 estimator.addContentLength(response.url, response);
                 return response;
             })
@@ -79,7 +77,6 @@ class SpeedEstimator {
     
     constructor() {
         this.allTimings = [];
-        this.allUrlRewritings = {};
         this.allContentLengths = [];
         this.allIntervals = [];
         this.INTERVAL_DURATION = 25; // in milliseconds
@@ -90,10 +87,7 @@ class SpeedEstimator {
         this.epoch = Date.now();
 
         // Start the ticker
-        setInterval(() => {
-            this.refreshStats();
-            this.sendStatsToClients();
-        }, 1000);
+        this.tick();
 
         // Listen to the broadcast responses
         self.addEventListener('message', (event) => {
@@ -106,6 +100,18 @@ class SpeedEstimator {
         });
 
         this.initDatabase();
+    }
+
+    // Every second:
+    tick() {
+        // Do that...
+        this.refreshStats();
+        this.sendStatsToClients();
+
+        // ... and repeat
+        setTimeout(() => {
+            this.tick();
+        }, 1000);
     }
 
     getBandwidth() {
@@ -123,7 +129,7 @@ class SpeedEstimator {
             return this.bandwidthFromDatabase;
         }
 
-        return null;
+        return undefined;
     }
 
     getRTT() {
@@ -141,7 +147,7 @@ class SpeedEstimator {
             return this.rttFromDatabase;
         }
 
-        return null;
+        return undefined;
     }
 
     // Updates bandwidth & rtt
@@ -215,10 +221,6 @@ class SpeedEstimator {
     // only if it doesn't look like it comes from the browser's cache
     addOneTiming(timing) {
 
-        // As the Service Worker is able to change the url of a request,
-        // we let's use the new url.
-        timing.name = this.findNewUrl(timing.name);
-
         // If we don't have the transfer size (Safari & Edge don't provide it)
         // than let's try to read it from the Content-Length headers.
         if (!timing.transferSize) {
@@ -255,17 +257,6 @@ class SpeedEstimator {
                 return parseInt(this.allContentLengths[i].size, 10);
             }
         }
-    }
-
-    // And what a good idea we had to also save the urls that were modified by the service worker!
-    // Because we need one.
-    findNewUrl(originalUrl) {
-        return this.allUrlRewritings[originalUrl] || originalUrl;
-    }
-
-    // Saves url rewritings in a list for later use
-    addUrlRewriting(originalUrl, newUrl) {
-        this.allUrlRewritings[originalUrl] = newUrl;
     }
 
     // Saves the content-length data from a fetched response header
@@ -306,7 +297,7 @@ class SpeedEstimator {
         const newArray = this.allIntervals.slice(from / this.INTERVAL_DURATION);
         
         if (newArray.length === 0) {
-            return null;
+            return undefined;
         }
 
         // Sums up the transfered size in this duration
@@ -314,7 +305,7 @@ class SpeedEstimator {
         
         // Skip estimating bandwidth if too few kilobytes were collected
         if (transferedSize < 51200) {
-            return null;
+            return undefined;
         }
 
         // Now let's use the 90th percentile of all values
@@ -363,7 +354,7 @@ class SpeedEstimator {
 
         // Skip estimating RTT if too few requests were analyzed
         if (pings.length < 3) {
-            return null;
+            return undefined;
         }
 
         // Let's use the 20th percentile here, to eliminate servers' slowness
@@ -374,12 +365,12 @@ class SpeedEstimator {
     // Not very accurate, but accurate enough for our needs.
     percentile(arr, p) {
 
-        // Remove nulls and transfer to a new array
-        let newArray = arr.filter((cell) => cell !== null);
+        // Remove undefineds and transfer to a new array
+        let newArray = arr.filter((cell) => cell !== undefined);
 
         // Fail if there are no results
         if (newArray.length === 0) {
-            return null;
+            return undefined;
         }
 
         newArray.sort((a, b) => a - b);
@@ -393,7 +384,7 @@ class SpeedEstimator {
         let totalWeights = 0;
 
         for (var i = 0; i < arr.length; i++) {
-            if (arr[i] !== null) {
+            if (arr[i] !== undefined) {
 
                 let weight = 1 / Math.pow(i + 1, 3);
                 // With that formula:
@@ -409,7 +400,7 @@ class SpeedEstimator {
         }
 
         if (totalWeights === 0) {
-            return null;
+            return undefined;
         }
 
         return total / totalWeights;
@@ -473,9 +464,9 @@ class SpeedEstimator {
     retrieveStats() {
         try {
             this.database.transaction('bw', 'readonly').objectStore('bw').get(1).onsuccess = (event) => {
-                if (event.target) {
-                    this.bandwidthFromDatabase = event.target.result.bandwidth || null;
-                    this.rttFromDatabase = event.target.result.rtt || null;
+                if (event.target.result) {
+                    this.bandwidthFromDatabase = event.target.result.bandwidth || undefined;
+                    this.rttFromDatabase = event.target.result.rtt || undefined;
                     this.connectionTypeFromDatabase = event.target.result.connectionType;
                 }
             };

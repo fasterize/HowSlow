@@ -57,10 +57,7 @@ class SpeedEstimator {
         this.epoch = Date.now();
 
         // Start the ticker
-        setInterval(() => {
-            this.refreshStats();
-            this.sendStatsToClients();
-        }, 1000);
+        this.tick();
 
         // Listen to the broadcast responses
         self.addEventListener('message', (event) => {
@@ -73,6 +70,18 @@ class SpeedEstimator {
         });
 
         this.initDatabase();
+    }
+
+    // Every second:
+    tick() {
+        // Do that...
+        this.refreshStats();
+        this.sendStatsToClients();
+
+        // ... and repeat
+        setTimeout(() => {
+            this.tick();
+        }, 1000);
     }
 
     getBandwidth() {

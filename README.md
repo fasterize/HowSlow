@@ -62,7 +62,19 @@ estimator.getBandwidth()
 estimator.getRTT()
 ```
 
-You can write your own logic at the top of the current script. What you can't do is write a fetch event listener as there can be only one. You can still use a hook function called  `urlRewritingHook`.
+You can write your own logic at the top of the current service worker script. What you can't do is write a fetch event listener as there can be only one. But you can use some hook functions: `urlRewritingHook` and `urlBlockingHook`. More details below.
+
+If you want to keep your service worker's logic separated from howslow, you can use the importScripts() method. But that's one more request before the Service Workers is available.
+
+```js
+self.importScripts('howSlowForSW.js');
+
+// ... and here is your own code
+```
+
+### The urlRewritingHook
+
+Use this hook to rewrite the URL before the service workers sends the request. The function should return the new URL or `null` if no change is needed.
 
 Here is an example that adds an `-hd` suffix to images on fast connections:
 
@@ -85,18 +97,22 @@ function urlRewritingHook(url) {
 // ... and here is the rest of the howSlowForSW.js script
 ```
 
-If you want to keep your logic separated from howslow, you can use the importScripts() method. But that's one more request before the Service Workers is available.
+### The urlBlockingHook
+
+Use this hook to cancel the request before it's sent to network. Returning `true` will block the request, returning `false` will let it go.
+
+Here is an example that blocks a third party script on slow connections:
 
 ```js
-self.importScripts('howSlowForSW.js');
-
-// ... and here is your own code
+function urlBlockingHook(url) {
+    return (url === 'https://thirdparty.com/tracker.js' && estimator.getBandwidth() < 50);
+}
 ```
 
 
 ## Will it work on the first page load?
 
-The first time it's called, the Service Worker needs to instantiate and initialize itself. For that reason, it only gets available after a few seconds and you might miss entirely the first page load. But it'll be ready for the next page, or the next user action if it's a Single Page Application.
+The first time it's called, the Service Worker needs time to instantiate and initialize itself. For that reason, it only gets available after a few seconds and you might miss entirely the first page load. But it'll be ready for the next user action.
 
 
 ## Ok, great. But what's the difference with the Network Information API?

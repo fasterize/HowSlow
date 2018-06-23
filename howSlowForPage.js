@@ -43,7 +43,7 @@ class HowSlowForPage {
         window.navigator.serviceWorker.onmessage = (event) => {
             if (event.data.command === 'timingsPlz') {                
                 // The Service Workers asks for resource timings
-                var timings = this.readLatestResourceTimings();
+                const timings = this.readLatestResourceTimings();
                 
                 if (timings.length > 0) {
                     this.sendResourceTimings(timings);
@@ -74,7 +74,7 @@ class HowSlowForPage {
             return [];
         }
 
-        var timings = [];
+        let timings = [];
 
         if (!this.firstRequestSent) {
 

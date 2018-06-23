@@ -1,8 +1,3 @@
-function urlBlockingHook(url) {
-    return url.endsWith('0');
-}
-
-
 function urlRewritingHook(url) {
     
     // This is some demo code. Adapt to your needs.
@@ -16,13 +11,13 @@ function urlRewritingHook(url) {
         // ... and choose the right image!
         var bandwidth = estimator.getBandwidth();
 
-        if (bandwidth > 1000) {
+        if (bandwidth > 4000) {
             return 'images/image-XL.jpg?timestamp=' + execResult[1];
-        } else if (bandwidth > 300) {
+        } else if (bandwidth > 1000) {
             return 'images/image-L.jpg?timestamp=' + execResult[1];
-        } else if (bandwidth > 100) {
+        } else if (bandwidth > 200) {
             return 'images/image-M.jpg?timestamp=' + execResult[1];
-        } else if (bandwidth > 30) {
+        } else if (bandwidth > 50) {
             return 'images/image-S.jpg?timestamp=' + execResult[1];
         } else if (bandwidth > 10) {
             return 'images/image-XS.jpg?timestamp=' + execResult[1];

@@ -1,3 +1,8 @@
+function urlBlockingHook(url) {
+    return url.endsWith('0');
+}
+
+
 function urlRewritingHook(url) {
     
     // This is some demo code. Adapt to your needs.
@@ -54,7 +59,15 @@ self.addEventListener('activate', () => {
 // Intercept requests
 self.addEventListener('fetch', (event) => {
     
-    let modifiedUrl = (typeof urlRewritingHook === 'functon') ? urlRewritingHook(event.request.url) : null;
+    if (typeof urlBlockingHook === 'function' && urlBlockingHook(event.request.url) === true) {
+        event.respondWith(new Response('', {
+            status: 446,
+            statusText: 'Blocked by Service Worker'
+        }));
+        return;
+    }
+
+    let modifiedUrl = (typeof urlRewritingHook === 'function') ? urlRewritingHook(event.request.url) : null;
     let options = {};
 
     if (modifiedUrl) {

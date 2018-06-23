@@ -1,3 +1,8 @@
+function urlBlockingHook(url) {
+    return url.endsWith('0');
+}
+
+
 function urlRewritingHook(url) {
     
     // This is some demo code. Adapt to your needs.

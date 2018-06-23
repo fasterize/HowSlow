@@ -9,7 +9,7 @@ function urlRewritingHook(url) {
     if (execResult !== null) {
 
         // ... and choose the right image!
-        var bandwidth = estimator.getBandwidth();
+        var bandwidth = howslow.getBandwidth();
 
         if (bandwidth > 4000) {
             return 'images/image-XL.jpg?timestamp=' + execResult[1];

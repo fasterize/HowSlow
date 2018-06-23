@@ -23,10 +23,20 @@ var HowSlowForPage = function () {
         this.navigationStart = 0;
     }
 
-    // Initializes the Service Worker, or at least tries
-
-
     _createClass(HowSlowForPage, [{
+        key: 'getBandwidth',
+        value: function getBandwidth() {
+            return this.bandwidth;
+        }
+    }, {
+        key: 'getRTT',
+        value: function getRTT() {
+            return this.rtt;
+        }
+
+        // Initializes the Service Worker, or at least tries
+
+    }, {
         key: 'initSW',
         value: function initSW(swPath) {
             return new Promise(function (resolve, reject) {

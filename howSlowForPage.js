@@ -12,6 +12,14 @@ class HowSlowForPage {
         this.navigationStart = 0;
     }
 
+    getBandwidth() {
+        return this.bandwidth;
+    }
+
+    getRTT() {
+        return this.rtt;
+    }
+
     // Initializes the Service Worker, or at least tries
     initSW(swPath) {
         return new Promise((resolve, reject) => {

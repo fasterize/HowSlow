@@ -9,7 +9,7 @@ function urlRewritingHook(url) {
     if (execResult !== null) {
 
         // ... and choose the right image!
-        var bandwidth = estimator.getBandwidth();
+        var bandwidth = howslow.getBandwidth();
 
         if (bandwidth > 4000) {
             return 'images/image-XL.jpg?timestamp=' + execResult[1];
@@ -46,7 +46,7 @@ self.addEventListener('activate', () => {
 
             // The attached pages might already have some resource timings available.
             // Let's ask!
-            estimator.askTimingsToClients();
+            howslow.askTimingsToClients();
         });
     }
 });
@@ -74,14 +74,14 @@ self.addEventListener('fetch', (event) => {
         fetch((modifiedUrl || event.request), options)
             .then(function(response) {
                 // Save the content-length header
-                estimator.addContentLength(response.url, response);
+                howslow.addContentLength(response.url, response);
                 return response;
             })
     );
 });
 
 
-class SpeedEstimator {
+class HowSlowForSW {
     
     constructor() {
         this.allTimings = [];
@@ -485,4 +485,4 @@ class SpeedEstimator {
 }
 
 // Let's go!
-const estimator = new SpeedEstimator();
+self.howslow = new HowSlowForSW();

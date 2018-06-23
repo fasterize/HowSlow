@@ -46,11 +46,11 @@ Grab the howSlowForSW.js script, rename it as you like (`mySW.js` in the above e
 If you need the stats in the page's scope, they're available like this:
 
 ```js
-if (howslow.bandwidth > 1000) { // Remember, bandwidth is in KBps (1 Kilo Bytes = 8 Kilo bits)
+if (howslow.getBandwidth() > 1000) { // Remember, bandwidth is in KBps (1 Kilo Bytes = 8 Kilo bits)
     videoPlayer.init();
 }
 
-if (howslow.rtt < 50) { // Roundtrip Time is in milliseconds
+if (howslow.getRTT() < 50) { // Roundtrip Time is in milliseconds
     loadThirdParties();
 }
 ```
@@ -58,8 +58,8 @@ if (howslow.rtt < 50) { // Roundtrip Time is in milliseconds
 If you need them in the Service Worker's scope, here they are:
 
 ```js
-estimator.getBandwidth()
-estimator.getRTT()
+howslow.getBandwidth()
+howslow.getRTT()
 ```
 
 You can write your own logic at the top of the current service worker script. What you can't do is write a fetch event listener as there can be only one. But you can use some hook functions: `urlRewritingHook` and `urlBlockingHook`. More details below.
@@ -85,7 +85,7 @@ function urlRewritingHook(url) {
     const regexp = /images\/editorial\/(.*)\.jpg$/;
     const execResult = regexp.exec(url);
 
-    if (execResult !== null && estimator.getBandwidth() > 1000) {
+    if (execResult !== null && howslow.getBandwidth() > 1000) {
         // Add an "-hd" suffix to the image name
         return '/images/editorial/' + execResult[1] + '-hd.jpg';
     }
@@ -105,7 +105,7 @@ Here is an example that blocks a third party script on slow connections:
 
 ```js
 function urlBlockingHook(url) {
-    return (url === 'https://thirdparty.com/tracker.js' && estimator.getBandwidth() < 50);
+    return (url === 'https://thirdparty.com/tracker.js' && howslow.getBandwidth() < 50);
 }
 ```
 

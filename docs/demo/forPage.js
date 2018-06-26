@@ -10,17 +10,16 @@ var HowSlowForPage = function () {
 
         _classCallCheck(this, HowSlowForPage);
 
-        this.bandwidth = null;
-        this.rtt = null;
+        this.bandwidth = undefined;
+        this.rtt = undefined;
+        this.firstRequestSent = false;
+        this.navigationStart = 0;
 
         this.initSW(swPath).then(function () {
             return _this.listenToSW();
-        }).catch(function (error) {
-            return console.log('[HowSlow]' + error);
         });
 
-        this.firstRequestSent = false;
-        this.navigationStart = 0;
+        this.storageIO();
     }
 
     _createClass(HowSlowForPage, [{
@@ -155,6 +154,29 @@ var HowSlowForPage = function () {
             // ... some other scripts might need them!
 
             return timings;
+        }
+
+        // On the SW's side, stats are saved in IndexedDB. Here we have access to LocalStorage.
+
+    }, {
+        key: 'storageIO',
+        value: function storageIO() {
+            var _this4 = this;
+
+            // When leaving the page, save stats into LocalStorage for faster ignition
+            window.addEventListener('unload', function () {
+                if (_this4.bandwidth || _this4.rtt) {
+                    window.localStorage.setItem('howslow', _this4.bandwidth + ',' + _this4.rtt);
+                }
+            });
+
+            // And when arriving on the page, retrieve stats
+            var stats = window.localStorage.getItem('howslow');
+            if (stats) {
+                stats = stats.split(',');
+                this.bandwidth = stats[0] || undefined;
+                this.rtt = stats[1] || undefined;
+            }
         }
     }]);
 

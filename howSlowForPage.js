@@ -1,15 +1,14 @@
 class HowSlowForPage {
     
     constructor(swPath) {
-        this.bandwidth = null;
-        this.rtt = null;
-
-        this.initSW(swPath)
-            .then(() => this.listenToSW())
-            .catch((error) => console.log('[HowSlow]' + error));
-
+        this.bandwidth = undefined;
+        this.rtt = undefined;
         this.firstRequestSent = false;
         this.navigationStart = 0;
+
+        this.initSW(swPath).then(() => this.listenToSW());
+
+        this.storageIO();
     }
 
     getBandwidth() {
@@ -128,5 +127,23 @@ class HowSlowForPage {
         // ... some other scripts might need them!
 
         return timings;
+    }
+
+    // On the SW's side, stats are saved in IndexedDB. Here we have access to LocalStorage.
+    storageIO() {
+        // When leaving the page, save stats into LocalStorage for faster ignition
+        window.addEventListener('unload', () => {
+            if (this.bandwidth || this.rtt) {
+                window.localStorage.setItem('howslow', this.bandwidth + ',' + this.rtt);
+            }
+        });
+
+        // And when arriving on the page, retrieve stats
+        let stats = window.localStorage.getItem('howslow');
+        if (stats) {
+            stats = stats.split(',');
+            this.bandwidth = stats[0] || undefined;
+            this.rtt = stats[1] || undefined;
+        }
     }
 }

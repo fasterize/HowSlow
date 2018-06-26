@@ -139,7 +139,7 @@ class HowSlowForSW {
         this.rtt = this.estimateRTT();
         
         // If the bandwith or the RTT were correctly estimated,
-        // we save them to database and send them as a message to clients
+        // we save them to database
         if (this.bandwidth || this.rtt) {
             this.saveStats();
         }

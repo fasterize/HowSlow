@@ -1,4 +1,4 @@
-This is an in-browser bandwidth and RTT (roundtrip time) estimator based on a Service Worker and the Resource Timing API.
+HowSlow is an in-browser bandwidth and RTT (roundtrip time) estimator based on a Service Worker and the Resource Timing API.
 
 
 ## How does it work?
@@ -129,5 +129,5 @@ However, Service Workers are quite unpredictable and you should not rely on this
 
 ## Authors
 
-The Fasterize team. [Fasterize](https://www.fasterize.com) is an automatic frontend optimization platform. 
+The Fasterize team. [Fasterize](https://www.fasterize.com) is a frontend optimization platform that makes your website super-fast, super-easily.
 

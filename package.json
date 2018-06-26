@@ -1,5 +1,5 @@
 {
-  "name": "howslow",
+  "name": "HowSlow",
   "version": "0.0.1",
   "description": "Bandwidth and RTT estimation script",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gmetais/howslow.git"
+    "url": "git+https://github.com/fasterize/HowSlow.git"
   },
   "keywords": [
     "webperf",
@@ -21,9 +21,9 @@
   "author": "Fasterize",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gmetais/howslow/issues"
+    "url": "https://github.com/fasterize/HowSlow/issues"
   },
-  "homepage": "https://github.com/gmetais/howslow#readme",
+  "homepage": "https://github.com/fasterize/HowSlow#readme",
   "devDependencies": {
     "babel-cli": "6.26.0",
     "babel-preset-es2015": "6.24.1"

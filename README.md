@@ -5,6 +5,8 @@ HowSlow is an in-browser bandwidth and RTT (roundtrip time) estimator based on a
 
 Basicaly, the Service Worker includes an algorythm that reads previous [Resource Timing](https://developer.mozilla.org/en-US/docs/Web/API/Resource_Timing_API/Using_the_Resource_Timing_API), uses them to estimate the connectivity metrics and constantly adjusts them after every newly downloaded resource.
 
+![alt text](.docs/howslow-waterfall-to-stats.png "HowSlow : from network monitoring to bandwidth estimation")
+
 Estimated bandwidth and RTT are available both in the Service Worker and the JavaScript scope of the page for a large variety of behaviors.
 
 
@@ -125,6 +127,11 @@ The [Network Information API](https://developer.mozilla.org/en-US/docs/Web/API/N
 It's compatible with the latest versions of Chrome, Firefox and Safari (v11.3). Unfortunately, Edge (v17) is not compatible. We're looking for a workaround.
 
 However, Service Workers are quite unpredictable and you should not rely on this tool for important tasks. Use it for **progressive enhancement**.
+
+
+## Demo
+
+
 
 
 ## Authors

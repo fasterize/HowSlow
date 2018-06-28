@@ -1,0 +1,58 @@
+<!-- 
+    By default, when a srcset defines several widths, the browser will tend 
+    to use a very large image in high DPI screens.
+
+    Example:
+    The following four responsive widths are defined : 300w 700w 1400w 2800w.
+    A 480px wide screen with a 3x pixel density will want a 480x3 = 1440px image.
+    And between the 2800px and the 1400px images, it will choose 2800px.
+    This can be terrible for performance.
+
+    The following code lazyloads an image and artificialy reduces its resolution to 
+    a specific pixel ratio, depending on the user's connectivity.
+
+    This example uses the lazyloading library LazySizes...
+    => https://github.com/aFarkas/lazysizes
+
+    ... along with Optimumx (a plugin for LazySizes)
+    => https://github.com/aFarkas/lazysizes/tree/gh-pages/plugins/optimumx
+
+-->
+<script src="howSlowForPage.js"></script>
+<script src="lazysizes.min.js"></script>
+<script src="ls.optimumx.js"></script>
+
+<script>
+    // Init HowSlow
+    window.howslow = new HowSlowForPage('/hosSlowForSW.js');
+
+    // Init Optimumx
+    window.lazySizesConfig = window.lazySizesConfig || {};
+    window.lazySizesConfig.getOptimumX = function() {
+        
+        var bandwidth = window.howslow && window.howslow.getBandwidth();
+        
+        if (!bandwidth || bandwidth > 2000) {
+            // If howslow is not initialized yet
+            // or if the bandwidth is very good (>2 megabytes per second)
+            // let's return the real device's physical pixel density
+            return window.devicePixelRatio;
+        } else if (bandwidth > 200) {
+            // For correct bandwidth, let's ignore pixel densities > x2
+            return 2;
+        } else {
+            // And for the slowest users, let's ignore pixel densities > x1.2
+            return 1.2;
+        }
+    };
+</script>
+
+<img
+    class="lazyload"
+    src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    data-srcset="http://placehold.it/300x150 300w,
+                 http://placehold.it/700x300 700w,
+                 http://placehold.it/1400x600 1400w,
+                 http://placehold.it/2800x1200 2800w"
+    data-sizes="auto"
+    data-optimumx="auto" />

@@ -112,9 +112,13 @@ function urlBlockingHook(url) {
 ## Some coding examples
 
 [Block a custom font on slow bandwidth](./examples/block-fonts/sw.js)
+
 [Adjust density of responsive images according to bandwidth](./examples/adjust-image-density/page.html)
-[Rewrite image URLs to add an "-hd" suffix](./examples/change-image-urls/sw.js)
-[Block third parties](./examples/block-third-parties)
+
+[Rewrite image URLs to add an "-hd" suffix](./examples/change-images-urls/sw.js)
+
+[Block a third party script](./examples/block-third-parties/sw.js)
+
 [Display a "Slow connection detected" message](./examples/show-connectivity-message/page.html)
 
 

@@ -5,7 +5,7 @@ HowSlow is an in-browser bandwidth and RTT (roundtrip time) estimator based on a
 
 Basicaly, the Service Worker includes an algorythm that reads previous [Resource Timing](https://developer.mozilla.org/en-US/docs/Web/API/Resource_Timing_API/Using_the_Resource_Timing_API), uses them to estimate the connectivity metrics and constantly adjusts them after every newly downloaded resource.
 
-![alt text](.docs/howslow-waterfall-to-stats.png "HowSlow : from network monitoring to bandwidth estimation")
+![From network monitoring to bandwidth estimation](./docs/howslow-waterfall-to-stats.png "HowSlow : from network monitoring to bandwidth estimation")
 
 Estimated bandwidth and RTT are available both in the Service Worker and the JavaScript scope of the page for a large variety of behaviors.
 
@@ -25,8 +25,6 @@ But you can also think the other way 🔃 and enhance your website quality on hi
 
 
 ## How to install?
-
-*TODO: make it available as an NPM package*
 
 ### Step 1: Load howSlowForPage.js and instantiate it
 
@@ -111,6 +109,14 @@ function urlBlockingHook(url) {
 }
 ```
 
+## Some coding examples
+
+[Block a custom font on slow bandwidth](./examples/block-fonts/sw.js)
+[Adjust density of responsive images according to bandwidth](./examples/adjust-image-density/page.html)
+[Rewrite image URLs to add an "-hd" suffix](./examples/change-image-urls/sw.js)
+[Block third parties](./examples/block-third-parties)
+[Display a "Slow connection detected" message](./examples/show-connectivity-message/page.html)
+
 
 ## Will it work on the first page load?
 
@@ -131,7 +137,8 @@ However, Service Workers are quite unpredictable and you should not rely on this
 
 ## Demo
 
-
+Demo page: https://fasterize.github.io/HowSlow/demo/demo.html
+Mirror: https://gmetais.github.io/howslow/demo/demo.html
 
 
 ## Authors

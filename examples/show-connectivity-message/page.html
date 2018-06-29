@@ -1,0 +1,35 @@
+<!--
+    This example shows notification messages if the RTT gets too slow 
+    or if the user goes offline and hides then when it gets better.
+
+    It uses the Noty library to display popins
+    => https://github.com/needim/noty
+-->
+
+<link href="lib/noty.css" rel="stylesheet">
+
+<script src="howSlowForPage.js"></script>
+<script src="lib/noty.js" type="text/javascript"></script>
+
+<script>
+    // Init HowSlow
+    var howslow = new HowSlowForPage('/howSlowForSW.js');
+
+    // Init the two notification popins but don't show them yet
+    var slowNotif = new Noty({text: 'Slow connection detected'});
+    var offlineNotif = new Noty({text: 'Connection lost'});
+
+    setInterval(function() {
+        if (navigator.onLine === true) {
+            offlineNotif.close();
+            if (howslow.getRTT > 2000) {
+                slowNotif.show();
+            } else {
+                slowNotif.close();
+            }
+        } else {
+            offlineNotif.show();
+            slowNotif.close();
+        }
+    }, 3000);
+</script>

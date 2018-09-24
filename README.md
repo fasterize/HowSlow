@@ -1,4 +1,4 @@
-HowSlow is an in-browser bandwidth and RTT (roundtrip time) estimator based on a Service Worker and the Resource Timing API.
+HowSlow is an in-browser bandwidth and RTT (roundtrip time) estimator based on a Service Worker and the Resource Timing API. When deployed on a website, it allows developers to adapt design or behavior according to the each user's bandwidth.
 
 
 ## How does it work?
@@ -7,21 +7,30 @@ Basicaly, the Service Worker includes an algorythm that reads previous [Resource
 
 ![From network monitoring to bandwidth estimation](./docs/howslow-waterfall-to-stats.png "HowSlow : from network monitoring to bandwidth estimation")
 
-Estimated bandwidth and RTT are available both in the Service Worker and the JavaScript scope of the page for a large variety of behaviors.
+Estimated bandwidth and RTT are available both in the Service Worker and the JavaScript scope of the page to allow a large variety of behaviors.
 
 
 ## What is it good for?
 
 Send some love ❤️ to your slower users:
 + load lower quality images
-+ avoid loading some third parties such as ads, retargeting tags, AB Testing...
++ avoid loading some heavy third parties such as ads, retargeting tags, AB Testing...
 + display a clickable thumbnail instead of a video
-+ replace your dynamic map by a static one
++ directly load the lowest bitrate in an adaptative bitrate video player
++ replace a dynamic Google Map by a static one
 + use an aggressive "cache then network" Service Worker strategy
++ switch your PWA to offline-first mode when the network gets really bad
 + show a "please wait" message on Ajax actions
++ reduce the frequency of network requests on autocomplete fields
++ avoid loading custom fonts
++ send customers to a faster competitor 😬
 + ... (add your ideas here)
 
-But you can also think the other way 🔃 and enhance your website quality on high speed connections, load beautiful HD images, start videos...
+But you can also think the other way 🔃 and enhance your website quality on high speed connections:
++ load beautiful HD images
++ automatically start videos
++ load more results at once
++ ... (add your ideas here)
 
 
 ## How to install?
@@ -122,9 +131,16 @@ function urlBlockingHook(url) {
 [Display a "Slow connection detected" message](./examples/show-connectivity-message/page.html)
 
 
+## How are the averages calculated?
+
+The algorithm uses "time weighted" averages: the most recent data has more weight than then old one. It is meant to provide a good compromise between reactivity and stability and to avoid the yo-yo effect.
+
+
 ## Will it work on the first page load?
 
 The first time it's called, the Service Worker needs time to instantiate and initialize itself. For that reason, it only gets available after a few seconds and you might miss entirely the first page load. But it'll be ready for the next user action.
+
+For returning visitors, HowSlow will first serve the last known values and adjust to the new bandwidth ASAP, in case it has changed in between.
 
 
 ## Ok, great. But what's the difference with the Network Information API?
@@ -134,7 +150,7 @@ The [Network Information API](https://developer.mozilla.org/en-US/docs/Web/API/N
 
 ## Compatibility
 
-It's compatible with the latest versions of Chrome, Firefox and Safari (v11.3). Unfortunately, Edge (v17) is not compatible. We're looking for a workaround.
+It's compatible with the latest versions of Chrome, Firefox and Safari. Unfortunately, Edge (v17) is not compatible. We're looking for a workaround.
 
 However, Service Workers are quite unpredictable and you should not rely on this tool for important tasks. Use it for **progressive enhancement**.
 
@@ -142,6 +158,7 @@ However, Service Workers are quite unpredictable and you should not rely on this
 ## Demo
 
 Demo page: https://fasterize.github.io/HowSlow/demo/demo.html
+
 Mirror: https://gmetais.github.io/howslow/demo/demo.html
 
 
